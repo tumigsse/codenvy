@@ -35,7 +35,7 @@ import com.codenvy.organization.shared.model.Organization;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
-import com.codenvy.resource.api.RamResourceType;
+import com.codenvy.resource.api.type.RamResourceType;
 import com.codenvy.resource.api.ResourceLockKeyProvider;
 import com.codenvy.resource.api.ResourceUsageTracker;
 import com.codenvy.resource.api.ResourcesReserveTracker;
@@ -352,7 +352,7 @@ public class JpaEntitiesCascadeRemovalTest {
         assertNull(notFoundToNull(() -> freeResourcesLimitDao.get(user2.getId())));
 
         // distributed resources is removed
-        assertNull(notFoundToNull(() -> organizationResourcesDistributor.get(childOrganization.getId())));
+        assertTrue(organizationResourcesDistributor.get(childOrganization.getId()).isEmpty());
 
         //cleanup
         stackDao.remove(stack3.getId());

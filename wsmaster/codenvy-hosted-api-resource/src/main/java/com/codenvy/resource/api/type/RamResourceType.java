@@ -12,21 +12,21 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.resource.api;
+package com.codenvy.resource.api.type;
 
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Set;
 
 /**
- * Describes resource type that control number of workspaces
- * which user can run at the same time.
+ * Describes resource type that control number of RAM
+ * which can be used by running workspaces at the same time.
  *
- * @author Sergii Leshchenko
+ * @author Sergii Leschenko
  */
-public class RuntimeResourceType extends AbstractExhaustibleResource {
-    public static final String ID   = "runtime";
-    public static final String UNIT = "item";
+public class RamResourceType extends AbstractExhaustibleResource {
+    public static final String ID   = "RAM";
+    public static final String UNIT = "mb";
 
     private static final Set<String> SUPPORTED_UNITS = ImmutableSet.of(UNIT);
 
@@ -37,7 +37,7 @@ public class RuntimeResourceType extends AbstractExhaustibleResource {
 
     @Override
     public String getDescription() {
-        return "Number of workspaces which user can run at the same time";
+        return "Number of RAM which can be used by running workspaces at the same time";
     }
 
     @Override

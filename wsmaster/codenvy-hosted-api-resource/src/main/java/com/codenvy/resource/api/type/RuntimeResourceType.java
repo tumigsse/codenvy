@@ -12,7 +12,7 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.resource.api;
+package com.codenvy.resource.api.type;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -20,12 +20,12 @@ import java.util.Set;
 
 /**
  * Describes resource type that control number of workspaces
- * which user can have at the same time.
+ * which user can run at the same time.
  *
  * @author Sergii Leshchenko
  */
-public class WorkspaceResourceType extends AbstractExhaustibleResource {
-    public static final String ID   = "workspace";
+public class RuntimeResourceType extends AbstractExhaustibleResource {
+    public static final String ID   = "runtime";
     public static final String UNIT = "item";
 
     private static final Set<String> SUPPORTED_UNITS = ImmutableSet.of(UNIT);
@@ -37,7 +37,7 @@ public class WorkspaceResourceType extends AbstractExhaustibleResource {
 
     @Override
     public String getDescription() {
-        return "Number of workspaces which user can have at the same time";
+        return "Number of workspaces which user can run at the same time";
     }
 
     @Override

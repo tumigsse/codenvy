@@ -12,21 +12,25 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-package com.codenvy.resource.api;
+package com.codenvy.resource.api.type;
 
+import com.codenvy.resource.api.exception.NoEnoughResourcesException;
+import com.codenvy.resource.model.Resource;
+import com.codenvy.resource.model.ResourceType;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.Set;
 
 /**
- * Describes resource type that control number of RAM
- * which can be used by running workspaces at the same time.
+ * Describes resource type that control the length of time
+ * that a user is idle with their workspace when the system
+ * will suspend the workspace by snapshotting it and then stopping it.
  *
  * @author Sergii Leschenko
  */
-public class RamResourceType extends AbstractExhaustibleResource {
-    public static final String ID   = "RAM";
-    public static final String UNIT = "mb";
+public class TimeoutResourceType implements ResourceType {
+    public static final String ID   = "timeout";
+    public static final String UNIT = "minute";
 
     private static final Set<String> SUPPORTED_UNITS = ImmutableSet.of(UNIT);
 
@@ -37,7 +41,7 @@ public class RamResourceType extends AbstractExhaustibleResource {
 
     @Override
     public String getDescription() {
-        return "Number of RAM which can be used by running workspaces at the same time";
+        return "Timeout";
     }
 
     @Override
@@ -48,5 +52,15 @@ public class RamResourceType extends AbstractExhaustibleResource {
     @Override
     public String getDefaultUnit() {
         return UNIT;
+    }
+
+    @Override
+    public Resource aggregate(Resource resourceA, Resource resourceB) {
+        return resourceA.getAmount() > resourceB.getAmount() ? resourceA : resourceB;
+    }
+
+    @Override
+    public Resource deduct(Resource total, Resource deduction) throws NoEnoughResourcesException {
+        return total;
     }
 }
