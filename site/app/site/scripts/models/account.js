@@ -90,6 +90,7 @@
                         break;
                     case "redhat":
                         scope = "scope=user";
+                        break;
                     case "linkedin":
                         scope = "scope=r_basicprofile r_emailaddress";
                         break;
