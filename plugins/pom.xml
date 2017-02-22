@@ -41,5 +41,6 @@
         <module>plugin-microsoft</module>
         <module>plugin-urlfactory</module>
         <module>plugin-product-info</module>
+        <module>plugin-linkedin</module>
     </modules>
 </project>
