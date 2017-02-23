@@ -180,11 +180,19 @@
         </dependency>
         <dependency>
             <groupId>com.codenvy.plugin</groupId>
+            <artifactId>codenvy-plugin-linkedin-oauth2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.codenvy.plugin</groupId>
             <artifactId>codenvy-plugin-microsoft-oauth2</artifactId>
         </dependency>
         <dependency>
             <groupId>com.codenvy.plugin</groupId>
             <artifactId>codenvy-plugin-microsoft-vsts-webhooks</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.codenvy.plugin</groupId>
+            <artifactId>codenvy-plugin-redhat-oauth2</artifactId>
         </dependency>
         <dependency>
             <groupId>com.codenvy.plugin</groupId>
