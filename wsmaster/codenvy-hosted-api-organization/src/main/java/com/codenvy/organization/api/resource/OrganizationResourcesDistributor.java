@@ -130,14 +130,17 @@ public class OrganizationResourcesDistributor {
      * @param suborganizationId
      *         suborganization identifier
      * @return distributed resources for given suborganization
-     * @throws NotFoundException
-     *         when organization with specified id doesn't have distributed resources
+     * or empty list when suborganization doesn't have distributed resources
      * @throws ServerException
      *         when any other error occurs
      */
-    public OrganizationDistributedResources get(String suborganizationId) throws NotFoundException, ServerException {
+    public List<? extends Resource> get(String suborganizationId) throws ServerException {
         requireNonNull(suborganizationId, "Required non-null suborganization id");
-        return organizationDistributedResourcesDao.get(suborganizationId);
+        try {
+            return organizationDistributedResourcesDao.get(suborganizationId).getResources();
+        } catch (NotFoundException e) {
+            return emptyList();
+        }
     }
 
     /**

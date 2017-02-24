@@ -14,7 +14,7 @@
  */
 package com.codenvy.resource.api.usage.tracker;
 
-import com.codenvy.resource.api.RuntimeResourceType;
+import com.codenvy.resource.api.type.RuntimeResourceType;
 import com.codenvy.resource.spi.impl.ResourceImpl;
 
 import org.eclipse.che.account.api.AccountManager;

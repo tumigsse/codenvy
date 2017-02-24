@@ -179,10 +179,10 @@ public class OrganizationResourcesDistributorTest {
         when(distributedResourcesDao.get(anyString())).thenReturn(distributedResources);
 
         //when
-        final OrganizationDistributedResources fetchedDistributedResources = distributor.get(ORG_ID);
+        final List<? extends Resource> fetchedDistributedResources = distributor.get(ORG_ID);
 
         //then
-        assertEquals(fetchedDistributedResources, distributedResources);
+        assertEquals(fetchedDistributedResources, distributedResources.getResources());
         verify(distributedResourcesDao).get(ORG_ID);
     }
 

@@ -14,7 +14,7 @@
  */
 package com.codenvy.resource.api.usage.tracker;
 
-import com.codenvy.resource.api.RamResourceType;
+import com.codenvy.resource.api.type.RamResourceType;
 import com.codenvy.resource.api.ResourceUsageTracker;
 import com.codenvy.resource.spi.impl.ResourceImpl;
 

@@ -14,13 +14,12 @@
  */
 package com.codenvy.resource.api.usage.tracker;
 
-import com.codenvy.resource.api.WorkspaceResourceType;
+import com.codenvy.resource.api.type.WorkspaceResourceType;
 import com.codenvy.resource.spi.impl.ResourceImpl;
 
 import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.shared.model.Account;
 import org.eclipse.che.api.core.NotFoundException;
-import org.eclipse.che.api.core.model.workspace.WorkspaceStatus;
 import org.eclipse.che.api.workspace.server.WorkspaceManager;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
 import org.mockito.InjectMocks;
