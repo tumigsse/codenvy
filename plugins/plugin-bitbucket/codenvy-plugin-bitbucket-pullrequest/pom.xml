@@ -33,12 +33,12 @@
             <artifactId>codenvy-plugin-bitbucket-ext-bitbucket</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.codenvy.plugin</groupId>
-            <artifactId>codenvy-plugin-pullrequest-ide</artifactId>
+            <groupId>org.eclipse.che.plugin</groupId>
+            <artifactId>che-plugin-pullrequest-ide</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.codenvy.plugin</groupId>
-            <artifactId>codenvy-plugin-pullrequest-shared</artifactId>
+            <groupId>org.eclipse.che.plugin</groupId>
+            <artifactId>che-plugin-pullrequest-shared</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
