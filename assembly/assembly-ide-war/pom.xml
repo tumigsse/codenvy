@@ -89,11 +89,6 @@
         </dependency>
         <dependency>
             <groupId>com.codenvy.plugin</groupId>
-            <artifactId>codenvy-hosted-ext-factory</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.codenvy.plugin</groupId>
             <artifactId>codenvy-hosted-ext-hosted</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -200,6 +195,16 @@
         <dependency>
             <groupId>org.eclipse.che.plugin</groupId>
             <artifactId>che-plugin-ext-dashboard-client</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.che.plugin</groupId>
+            <artifactId>che-plugin-factory-ide</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.che.plugin</groupId>
+            <artifactId>che-plugin-factory-shared</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
