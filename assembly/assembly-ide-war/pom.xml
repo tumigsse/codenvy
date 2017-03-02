@@ -108,8 +108,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.codenvy.plugin</groupId>
-            <artifactId>codenvy-plugin-github-pullrequest</artifactId>
+            <groupId>org.eclipse.che.plugin</groupId>
+            <artifactId>che-plugin-github-pullrequest</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

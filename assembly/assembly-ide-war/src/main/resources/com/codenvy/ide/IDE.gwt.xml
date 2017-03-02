@@ -63,9 +63,9 @@
     <inherits name="org.eclipse.che.ide.orion.OrionCompare"/>
     <inherits name='org.eclipse.che.plugin.php.Php'/>
     <inherits name='com.codenvy.plugin.product.info.ProductInfo'/>
-    <inherits name='com.codenvy.plugin.pullrequest.PullRequest'/>
+    <inherits name='org.eclipse.che.plugin.pullrequest.PullRequest'/>
+    <inherits name='org.eclipse.che.plugin.pullrequest.GithubPullRequest'/>
     <inherits name='com.codenvy.plugin.pullrequest.BitbucketPullRequest'/>
-    <inherits name='com.codenvy.plugin.pullrequest.GithubPullRequest'/>
     <inherits name='com.codenvy.plugin.pullrequest.VstsPullRequest'/>
 
     <inherits name='org.eclipse.che.plugin.cpp.Cpp'/>
