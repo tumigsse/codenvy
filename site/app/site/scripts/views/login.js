@@ -68,7 +68,7 @@
                                self.proceedCreate();
                             });
                         }else {
-                            $("#signUp").after('Self-service account creation has been disabled. If you do not have an account, please contact your Codenvy administrator.').remove();
+                            $("#signUp").after('Self-service account creation has been disabled. If you do not have an account, please contact your administrator.').remove();
                         }
                    })
                     .fail();
