@@ -1,0 +1,13 @@
+{
+  "title": "Codenvy",
+  "name": "Codenvy",
+  "logoFile": "codenvy-logo.svg",
+  "logoTextFile": "codenvy-logo-text.svg",
+  "favicon": "favicon.ico",
+  "loader": "loader.svg",
+  "ideResources": "/_app/",
+  "helpPath": "https://codenvy.com/support/",
+  "helpTitle": "Help",
+  "supportEmail": "wish@codenvy.com",
+  "oauthDocs": "Please contact your administrator."
+}
