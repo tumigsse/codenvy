@@ -14,21 +14,36 @@
  */
 package com.codenvy.organization.api;
 
+import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
+import com.codenvy.organization.api.event.OrganizationPersistedEvent;
+import com.codenvy.organization.api.event.OrganizationRemovedEvent;
+import com.codenvy.organization.api.event.OrganizationRenamedEvent;
+import com.codenvy.organization.api.permissions.OrganizationDomain;
+import com.codenvy.organization.shared.model.Member;
 import com.codenvy.organization.shared.model.Organization;
 import com.codenvy.organization.spi.MemberDao;
 import com.codenvy.organization.spi.OrganizationDao;
+import com.codenvy.organization.spi.impl.MemberImpl;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
+import com.google.inject.persist.Transactional;
 
+import org.eclipse.che.api.core.ApiException;
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.Page;
+import org.eclipse.che.api.core.Pages;
 import org.eclipse.che.api.core.ServerException;
+import org.eclipse.che.api.core.notification.EventService;
+import org.eclipse.che.commons.env.EnvironmentContext;
 import org.eclipse.che.commons.lang.NameGenerator;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -41,27 +56,33 @@ import static java.util.Objects.requireNonNull;
  */
 @Singleton
 public class OrganizationManager {
+
+    private final EventService    eventService;
     private final OrganizationDao organizationDao;
     private final MemberDao       memberDao;
     private final Set<String>     reservedNames;
 
     @Inject
-    public OrganizationManager(OrganizationDao organizationDao,
+    public OrganizationManager(EventService eventService,
+                               OrganizationDao organizationDao,
                                MemberDao memberDao,
                                @Named("che.auth.reserved_user_names") String[] reservedNames) {
+        this.eventService = eventService;
         this.organizationDao = organizationDao;
         this.memberDao = memberDao;
         this.reservedNames = Sets.newHashSet(reservedNames);
     }
 
     /**
-     * Creates new organization
+     * Creates new organization.
      *
      * @param newOrganization
      *         organization to create
      * @return created organization
      * @throws NullPointerException
      *         when {@code organization} is null
+     * @throws NotFoundException
+     *         when parent organization was not found
      * @throws ConflictException
      *         when organization with such id/name already exists
      * @throws ConflictException
@@ -69,13 +90,26 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organization creation
      */
-    public Organization create(Organization newOrganization) throws ConflictException, ServerException {
+    @Transactional(rollbackOn = {RuntimeException.class, ApiException.class})
+    public Organization create(Organization newOrganization) throws NotFoundException, ConflictException, ServerException {
         requireNonNull(newOrganization, "Required non-null organization");
-        checkNameReservation(newOrganization.getName());
+        requireNonNull(newOrganization.getName(), "Required non-null organization name");
+
+        String qualifiedName;
+        if (newOrganization.getParent() != null) {
+            final Organization parent = getById(newOrganization.getParent());
+            qualifiedName = parent.getQualifiedName() + "/" + newOrganization.getName();
+        } else {
+            qualifiedName = newOrganization.getName();
+        }
+        checkNameReservation(qualifiedName);
+
         final OrganizationImpl organization = new OrganizationImpl(NameGenerator.generate("organization", 16),
-                                                                   newOrganization.getName(),
+                                                                   qualifiedName,
                                                                    newOrganization.getParent());
         organizationDao.create(organization);
+        addFirstMember(organization);
+        eventService.publish(new OrganizationPersistedEvent(organization)).propagateException();
         return organization;
     }
 
@@ -95,15 +129,31 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs organization updating
      */
+    @Transactional(rollbackOn = {RuntimeException.class, ApiException.class})
     public Organization update(String organizationId, Organization update) throws NotFoundException,
                                                                                   ConflictException,
                                                                                   ServerException {
         requireNonNull(organizationId, "Required non-null organization id");
         requireNonNull(update, "Required non-null organization");
-        checkNameReservation(update.getName());
+        requireNonNull(update.getName(), "Required non-null organization name");
+
         final OrganizationImpl organization = organizationDao.getById(organizationId);
-        organization.setName(update.getName());
+        final String oldQualifiedName = organization.getQualifiedName();
+        final String oldName = organization.getName();
+
+        final String newName = update.getName();
+        final String newQualifiedName = buildQualifiedName(oldQualifiedName, update.getName());
+
+        checkNameReservation(newQualifiedName);
+        organization.setQualifiedName(newQualifiedName);
+
         organizationDao.update(organization);
+        if (!newName.equals(oldName)) {
+            updateSuborganizationsQualifiedNames(oldQualifiedName, organization.getQualifiedName());
+
+            final String performerName = EnvironmentContext.getCurrent().getSubject().getUserName();
+            eventService.publish(new OrganizationRenamedEvent(performerName, oldName, newName, organization));
+        }
         return organization;
     }
 
@@ -117,9 +167,20 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organization removing
      */
+    @Transactional(rollbackOn = {RuntimeException.class, ApiException.class})
     public void remove(String organizationId) throws ServerException {
         requireNonNull(organizationId, "Required non-null organization id");
-        organizationDao.remove(organizationId);
+        try {
+            OrganizationImpl organization = organizationDao.getById(organizationId);
+            eventService.publish(new BeforeOrganizationRemovedEvent(organization)).propagateException();
+            removeSuborganizations(organizationId);
+            final List<Member> members = removeMembers(organizationId);
+            organizationDao.remove(organizationId);
+            final String initiator = EnvironmentContext.getCurrent().getSubject().getUserName();
+            eventService.publish(new OrganizationRemovedEvent(initiator, organization, members));
+        } catch (NotFoundException e) {
+            // organization is already removed
+        }
     }
 
     /**
@@ -173,7 +234,7 @@ public class OrganizationManager {
      * @throws ServerException
      *         when any other error occurs during organizations fetching
      */
-    public Page<? extends Organization> getByParent(String parent, int maxItems, int skipCount) throws ServerException {
+    public Page<? extends Organization> getByParent(String parent, int maxItems, long skipCount) throws ServerException {
         requireNonNull(parent, "Required non-null parent");
         return organizationDao.getByParent(parent, maxItems, skipCount);
     }
@@ -196,6 +257,85 @@ public class OrganizationManager {
     public Page<? extends Organization> getByMember(String userId, int maxItems, int skipCount) throws ServerException {
         requireNonNull(userId, "Required non-null user id");
         return memberDao.getOrganizations(userId, maxItems, skipCount);
+    }
+
+    private String buildQualifiedName(String oldQualifiedName, String newName) {
+        int lastSlashIndex = oldQualifiedName.lastIndexOf("/");
+        if (lastSlashIndex != -1) { //check that it is not root organization
+            return oldQualifiedName.substring(0, lastSlashIndex + 1) + newName;
+        } else {
+            return newName;
+        }
+    }
+
+    private void updateSuborganizationsQualifiedNames(String oldQualifiedName, String newQualifiedName) throws NotFoundException,
+                                                                                                               ConflictException,
+                                                                                                               ServerException {
+        for (OrganizationImpl suborganization : Pages.iterate((maxItems, skipCount) -> organizationDao.getSuborganizations(oldQualifiedName,
+                                                                                                                           maxItems,
+                                                                                                                           skipCount))) {
+            suborganization.setQualifiedName(suborganization.getQualifiedName().replaceFirst(oldQualifiedName, newQualifiedName));
+            organizationDao.update(suborganization);
+        }
+    }
+
+    /**
+     * Gets list of members by specified organization id.
+     *
+     * @param organizationId
+     *         organization identifier
+     * @param maxItems
+     *         the maximum number of members to return
+     * @param skipCount
+     *         the number of members to skip
+     * @return list of members
+     * @throws NullPointerException
+     *         when {@code organizationId} is null
+     * @throws ServerException
+     *         when any other error occurs during organizations fetching
+     */
+    public Page<? extends Member> getMembers(String organizationId, int maxItems, long skipCount) throws ServerException {
+        requireNonNull(organizationId, "Required non-null organization id");
+        return memberDao.getMembers(organizationId, maxItems, skipCount);
+    }
+
+    protected void addFirstMember(Organization organization) throws ServerException {
+        memberDao.store(new MemberImpl(EnvironmentContext.getCurrent().getSubject().getUserId(),
+                                       organization.getId(),
+                                       OrganizationDomain.getActions()));
+    }
+
+    /**
+     * Removes suborganizations of given parent organization page by page
+     *
+     * @param organizationId
+     *         parent organization id
+     */
+    @VisibleForTesting
+    void removeSuborganizations(String organizationId) throws ServerException {
+        Page<? extends Organization> suborganizationsPage;
+        do {
+            // skip count always equals to 0 because elements will be shifted after removing previous items
+            suborganizationsPage = organizationDao.getByParent(organizationId, 100, 0);
+            for (Organization suborganization : suborganizationsPage.getItems()) {
+                remove(suborganization.getId());
+            }
+        } while (suborganizationsPage.hasNextPage());
+    }
+
+    @VisibleForTesting
+    List<Member> removeMembers(String organizationId) throws ServerException {
+        List<Member> removed = new ArrayList<>();
+        Page<MemberImpl> membersPage;
+        do {
+            // skip count always equals to 0 because elements will be shifted after removing previous items
+            membersPage = memberDao.getMembers(organizationId, 100, 0);
+            for (MemberImpl member : membersPage.getItems()) {
+                removed.add(member);
+                memberDao.remove(member.getUserId(), member.getOrganizationId());
+            }
+        } while (membersPage.hasNextPage());
+        return removed;
     }
 
     /**

@@ -14,12 +14,15 @@
  */
 package com.codenvy.organization.api.resource;
 
-import com.codenvy.organization.shared.model.OrganizationDistributedResources;
+import com.codenvy.organization.api.OrganizationManager;
+import com.codenvy.organization.shared.model.Organization;
 import com.codenvy.resource.api.ResourceAggregator;
 import com.codenvy.resource.api.ResourcesReserveTracker;
+import com.codenvy.resource.api.usage.ResourceUsageManager;
 import com.codenvy.resource.model.Resource;
 
-import org.eclipse.che.api.core.Page;
+import org.eclipse.che.api.core.NotFoundException;
+import org.eclipse.che.api.core.Pages;
 import org.eclipse.che.api.core.ServerException;
 
 import javax.inject.Inject;
@@ -27,62 +30,52 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.codenvy.organization.spi.impl.OrganizationImpl.ORGANIZATIONAL_ACCOUNT;
 
 /**
- * Makes organization's resources unavailable for usage when organization shares them for its suborganizations.
+ * Makes organization's resources unavailable for usage when suborganization
+ * use shared resources.
  *
  * @author Sergii Leschenko
  */
 @Singleton
 public class OrganizationResourcesReserveTracker implements ResourcesReserveTracker {
-    static final int ORGANIZATION_RESOURCES_PER_PAGE = 100;
-
-    private final Provider<OrganizationResourcesDistributor> managerProvider;
-    private final ResourceAggregator                         resourceAggregator;
+    private final OrganizationManager            organizationManager;
+    private final ResourceAggregator             resourceAggregator;
+    private final Provider<ResourceUsageManager> usageManagerProvider;
 
     @Inject
-    public OrganizationResourcesReserveTracker(Provider<OrganizationResourcesDistributor> managerProvider,
-                                               ResourceAggregator resourceAggregator) {
-        this.managerProvider = managerProvider;
+    public OrganizationResourcesReserveTracker(OrganizationManager organizationManager,
+                                               ResourceAggregator resourceAggregator,
+                                               Provider<ResourceUsageManager> usageManagerProvider) {
+
+        this.organizationManager = organizationManager;
         this.resourceAggregator = resourceAggregator;
+        this.usageManagerProvider = usageManagerProvider;
     }
 
     @Override
     public List<? extends Resource> getReservedResources(String accountId) throws ServerException {
-        Page<? extends OrganizationDistributedResources> resourcesPage = managerProvider.get()
-                                                                                        .getByParent(accountId,
-                                                                                                     ORGANIZATION_RESOURCES_PER_PAGE,
-                                                                                                     0);
-        List<Resource> resources = new ArrayList<>();
-        do {
-            resourcesPage.getItems()
-                         .stream()
-                         .flatMap(distributedResources -> distributedResources.getResources()
-                                                                              .stream())
-                         .collect(Collectors.toCollection(() -> resources));
-        } while ((resourcesPage = getNextPage(resourcesPage, accountId)) != null);
-
-        return new ArrayList<>(resourceAggregator.aggregateByType(resources)
+        ResourceUsageManager resourceUsageManager = usageManagerProvider.get();
+        List<Resource> reservedResources = new ArrayList<>();
+        for (Organization suborganization : Pages.iterate((maxItems, skipCount) -> organizationManager.getByParent(accountId,
+                                                                                                                   maxItems,
+                                                                                                                   skipCount))) {
+            try {
+                // make unavailable for parent shared resources that are used
+                reservedResources.addAll(resourceUsageManager.getUsedResources(suborganization.getId()));
+                reservedResources.addAll(resourceUsageManager.getReservedResources(suborganization.getId()));
+            } catch (NotFoundException e) {
+                throw new ServerException(e.getLocalizedMessage(), e);
+            }
+        }
+        return new ArrayList<>(resourceAggregator.aggregateByType(reservedResources)
                                                  .values());
     }
 
     @Override
     public String getAccountType() {
         return ORGANIZATIONAL_ACCOUNT;
-    }
-
-    private Page<? extends OrganizationDistributedResources> getNextPage(Page<? extends OrganizationDistributedResources> resourcesPage,
-                                                                         String organizationId) throws ServerException {
-        if (!resourcesPage.hasNextPage()) {
-            return null;
-        }
-
-        final Page.PageRef nextPageRef = resourcesPage.getNextPageRef();
-        return managerProvider.get().getByParent(organizationId,
-                                                 nextPageRef.getPageSize(),
-                                                 nextPageRef.getItemsBefore());
     }
 }

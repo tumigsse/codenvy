@@ -14,39 +14,32 @@
  */
 package com.codenvy.organization.spi.tck;
 
-import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
-import com.codenvy.organization.api.event.PostOrganizationPersistedEvent;
 import com.codenvy.organization.spi.OrganizationDao;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.Page;
-import org.eclipse.che.api.core.ServerException;
+import org.eclipse.che.api.core.Pages;
 import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.commons.lang.NameGenerator;
 import org.eclipse.che.commons.test.tck.TckListener;
 import org.eclipse.che.commons.test.tck.repository.TckRepository;
 import org.eclipse.che.commons.test.tck.repository.TckRepositoryException;
-import org.eclipse.che.core.db.cascade.CascadeEventSubscriber;
-import org.eclipse.che.core.db.cascade.event.CascadeEvent;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import javax.inject.Inject;
+import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 /**
  * Tests {@link OrganizationDao} contract.
@@ -94,26 +87,6 @@ public class OrganizationDaoTest {
         organizationDao.create(organization);
 
         assertEquals(organizationDao.getById(organization.getId()), organization);
-    }
-
-    @Test(dependsOnMethods = "shouldThrowNotFoundExceptionOnGettingNonExistingOrganizationById",
-          expectedExceptions = NotFoundException.class)
-    public void shouldNotCreateUserWhenSubscriberThrowsExceptionOnUserStoring() throws Exception {
-        final OrganizationImpl organization = new OrganizationImpl("organization123",
-                                                                   "Test",
-                                                                   null);
-        CascadeEventSubscriber<PostOrganizationPersistedEvent> subscriber = mockCascadeEventSubscriber();
-        doThrow(new ConflictException("error")).when(subscriber).onCascadeEvent(any());
-        eventService.subscribe(subscriber, PostOrganizationPersistedEvent.class);
-
-        try {
-            organizationDao.create(organization);
-            fail("OrganizationDao#create had to throw conflict exception");
-        } catch (ConflictException ignored) {
-        }
-
-        eventService.unsubscribe(subscriber, PostOrganizationPersistedEvent.class);
-        organizationDao.getById(organization.getId());
     }
 
     @Test(expectedExceptions = ConflictException.class)
@@ -190,23 +163,6 @@ public class OrganizationDaoTest {
         assertNull(notFoundToNull(() -> organizationDao.getById(organization.getId())));
     }
 
-    @Test(dependsOnMethods = "shouldGetOrganizationById")
-    public void shouldNotRemoveUserWhenSubscriberThrowsExceptionOnUserRemoving() throws Exception {
-        final OrganizationImpl organization = organizations[0];
-        CascadeEventSubscriber<BeforeOrganizationRemovedEvent> subscriber = mockCascadeEventSubscriber();
-        doThrow(new ServerException("error")).when(subscriber).onCascadeEvent(any());
-        eventService.subscribe(subscriber, BeforeOrganizationRemovedEvent.class);
-
-        try {
-            organizationDao.remove(organization.getId());
-            fail("OrganizationDao#remove had to throw server exception");
-        } catch (ServerException ignored) {
-        }
-
-        assertEquals(organizationDao.getById(organization.getId()), organization);
-        eventService.unsubscribe(subscriber, BeforeOrganizationRemovedEvent.class);
-    }
-
     @Test
     public void shouldNotThrowAnyExceptionOnRemovingNonExistingOrganization() throws Exception {
         organizationDao.remove("non-existing-org");
@@ -256,7 +212,7 @@ public class OrganizationDaoTest {
     }
 
     @Test
-    public void shouldGetChildrenOrganizations() throws Exception {
+    public void shouldGetByParent() throws Exception {
         final OrganizationImpl parent = organizations[0];
         final OrganizationImpl child1 = new OrganizationImpl("child1", "childTest1", parent.getId());
         final OrganizationImpl child2 = new OrganizationImpl("child2", "childTest2", parent.getId());
@@ -277,6 +233,28 @@ public class OrganizationDaoTest {
         organizationDao.getByParent(null, 30, 0);
     }
 
+    @Test(expectedExceptions = NullPointerException.class)
+    public void shouldThrowNpeOnGettingSuborganizationsByNullQualifiedName() throws Exception {
+        organizationDao.getSuborganizations(null, 30, 0);
+    }
+
+    @Test
+    public void shouldGetSuborganizations() throws Exception {
+        final OrganizationImpl parent = organizations[0];
+        final OrganizationImpl child1 = new OrganizationImpl("child1", parent.getQualifiedName() + "/childTest1", parent.getId());
+        final OrganizationImpl child2 = new OrganizationImpl("child2", child1.getQualifiedName() + "/childTest2", child1.getId());
+        final OrganizationImpl child3 = new OrganizationImpl("child3", parent.getQualifiedName() + "/childTest3", parent.getId());
+        tckRepository.createAll(asList(child1, child2, child3));
+
+        final List<OrganizationImpl> suborganizations = Pages.stream((maxItems, skipCount) ->
+                                                                             organizationDao.getSuborganizations(parent.getQualifiedName(),
+                                                                                                                 maxItems,
+                                                                                                                 skipCount),
+                                                                     1)
+                                                             .collect(Collectors.toList());
+
+        assertEquals(suborganizations.size(), 3);
+    }
 
     private static <T> T notFoundToNull(Callable<T> action) throws Exception {
         try {
@@ -284,12 +262,5 @@ public class OrganizationDaoTest {
         } catch (NotFoundException x) {
             return null;
         }
-    }
-
-    private <T extends CascadeEvent> CascadeEventSubscriber<T> mockCascadeEventSubscriber() {
-        @SuppressWarnings("unchecked")
-        CascadeEventSubscriber<T> subscriber = mock(CascadeEventSubscriber.class);
-        doCallRealMethod().when(subscriber).onEvent(any());
-        return subscriber;
     }
 }

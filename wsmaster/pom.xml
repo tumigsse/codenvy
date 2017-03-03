@@ -20,15 +20,16 @@
     <parent>
         <artifactId>onpremises-assembly-parent</artifactId>
         <groupId>com.codenvy.onpremises</groupId>
-        <version>5.4.0-SNAPSHOT</version>
+        <version>5.5.0-SNAPSHOT</version>
     </parent>
     <groupId>com.codenvy.onpremises.wsmaster</groupId>
     <artifactId>codenvy-master-parent</artifactId>
-    <version>5.4.0-SNAPSHOT</version>
+    <version>5.5.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Codenvy Master Parent</name>
     <modules>
         <module>codenvy-hosted-mail-sender</module>
+        <module>codenvy-hosted-template-processor</module>
         <module>codenvy-hosted-platform-api-impl</module>
         <module>codenvy-hosted-infra-filters</module>
         <module>codenvy-hosted-recoverpassword</module>
@@ -56,10 +57,13 @@
         <module>codenvy-hosted-report-shared</module>
         <module>codenvy-hosted-report</module>
         <module>codenvy-hosted-api-admin</module>
+        <module>codenvy-hosted-api-resource-shared</module>
+        <module>codenvy-hosted-api-resource</module>
+        <module>codenvy-hosted-api-organization-shared</module>
         <module>codenvy-hosted-api-organization</module>
         <module>codenvy-hosted-system</module>
-        <module>codenvy-hosted-api-resource</module>
         <module>codenvy-hosted-api-audit</module>
+        <module>codenvy-hosted-personal-account</module>
         <module>codenvy-sql-schema</module>
     </modules>
 </project>

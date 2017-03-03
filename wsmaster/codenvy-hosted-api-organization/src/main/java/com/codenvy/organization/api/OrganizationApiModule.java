@@ -15,22 +15,25 @@
 package com.codenvy.organization.api;
 
 import com.codenvy.api.permission.server.SuperPrivilegesChecker;
+import com.codenvy.api.permission.server.account.AccountPermissionsChecker;
 import com.codenvy.api.permission.shared.model.PermissionsDomain;
-import com.codenvy.organization.api.permissions.OrganizationCreatorPermissionsProvider;
+import com.codenvy.organization.api.listener.MemberEventsPublisher;
+import com.codenvy.organization.api.listener.OrganizationEventsWebsocketBroadcaster;
+import com.codenvy.organization.api.listener.OrganizationNotificationEmailSender;
+import com.codenvy.organization.api.listener.RemoveOrganizationOnLastUserRemovedEventSubscriber;
 import com.codenvy.organization.api.permissions.OrganizationDomain;
 import com.codenvy.organization.api.permissions.OrganizationPermissionsFilter;
 import com.codenvy.organization.api.permissions.OrganizationResourceDistributionServicePermissionsFilter;
+import com.codenvy.organization.api.permissions.OrganizationalAccountPermissionsChecker;
 import com.codenvy.organization.api.resource.DefaultOrganizationResourcesProvider;
 import com.codenvy.organization.api.resource.OrganizationResourceLockKeyProvider;
 import com.codenvy.organization.api.resource.OrganizationResourcesDistributionService;
-import com.codenvy.organization.api.resource.OrganizationResourcesPermissionsChecker;
 import com.codenvy.organization.api.resource.OrganizationResourcesReserveTracker;
 import com.codenvy.organization.api.resource.SuborganizationResourcesProvider;
 import com.codenvy.resource.api.ResourceLockKeyProvider;
 import com.codenvy.resource.api.ResourcesReserveTracker;
 import com.codenvy.resource.api.free.DefaultResourcesProvider;
 import com.codenvy.resource.api.license.ResourcesProvider;
-import com.codenvy.resource.api.usage.ResourcesPermissionsChecker;
 import com.google.inject.AbstractModule;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
@@ -43,8 +46,7 @@ public class OrganizationApiModule extends AbstractModule {
     protected void configure() {
         bind(OrganizationService.class);
         bind(OrganizationPermissionsFilter.class);
-
-        bind(OrganizationCreatorPermissionsProvider.class).asEagerSingleton();
+        bind(RemoveOrganizationOnLastUserRemovedEventSubscriber.class).asEagerSingleton();
 
         Multibinder.newSetBinder(binder(), DefaultResourcesProvider.class)
                    .addBinding().to(DefaultOrganizationResourcesProvider.class);
@@ -58,13 +60,18 @@ public class OrganizationApiModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), ResourceLockKeyProvider.class)
                    .addBinding().to(OrganizationResourceLockKeyProvider.class);
 
-        Multibinder.newSetBinder(binder(), ResourcesPermissionsChecker.class)
-                   .addBinding().to(OrganizationResourcesPermissionsChecker.class);
+        Multibinder.newSetBinder(binder(), AccountPermissionsChecker.class)
+                   .addBinding().to(OrganizationalAccountPermissionsChecker.class);
 
         bind(OrganizationResourcesDistributionService.class);
         bind(OrganizationResourceDistributionServicePermissionsFilter.class);
 
-        Multibinder.newSetBinder(binder(), PermissionsDomain.class, Names.named(SuperPrivilegesChecker.SUPER_PRIVILEGED_DOMAINS))
+        bind(OrganizationEventsWebsocketBroadcaster.class).asEagerSingleton();
+        bind(OrganizationNotificationEmailSender.class).asEagerSingleton();
+        bind(MemberEventsPublisher.class).asEagerSingleton();
+
+        Multibinder.newSetBinder(binder(), PermissionsDomain.class,
+                                 Names.named(SuperPrivilegesChecker.SUPER_PRIVILEGED_DOMAINS))
                    .addBinding().to(OrganizationDomain.class);
     }
 }

@@ -15,7 +15,6 @@
 package com.codenvy.resource.api;
 
 import com.codenvy.resource.model.Resource;
-import com.codenvy.resource.spi.impl.ResourceImpl;
 
 import org.eclipse.che.api.core.ServerException;
 
@@ -24,7 +23,7 @@ import java.util.List;
 /**
  * Provides information about resources which are not available for usage by account owner.
  *
- * <p>It can be used for example for implementing resources redistribution between accounts or
+ * <p>It can be used for example for implementing resources sharing between accounts or
  * resources usage limitation when limit should be less than account's license has.
  *
  * @author Sergii Leschenko

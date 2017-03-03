@@ -15,10 +15,10 @@
 package com.codenvy.api.workspace;
 
 import com.codenvy.api.workspace.LimitsCheckingWorkspaceManager.WorkspaceCallback;
-import com.codenvy.resource.api.RamResourceType;
-import com.codenvy.resource.api.RuntimeResourceType;
-import com.codenvy.resource.api.WorkspaceResourceType;
 import com.codenvy.resource.api.exception.NoEnoughResourcesException;
+import com.codenvy.resource.api.type.RamResourceType;
+import com.codenvy.resource.api.type.RuntimeResourceType;
+import com.codenvy.resource.api.type.WorkspaceResourceType;
 import com.codenvy.resource.api.usage.ResourceUsageManager;
 import com.codenvy.resource.spi.impl.ResourceImpl;
 import com.codenvy.service.system.SystemRamInfo;
@@ -44,6 +44,7 @@ import static java.util.Collections.singletonList;
 import static org.eclipse.che.commons.lang.Size.parseSize;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -122,8 +123,9 @@ public class LimitsCheckingWorkspaceManagerTest {
     }
 
     @Test(expectedExceptions = LimitExceededException.class,
-          expectedExceptionsMessageRegExp = "Workspace namespace/workspace.. needs 3000MB to start. Your account has 200MB and 100MB " +
-                                            "in use\\. The workspace can't be start\\. Stop other workspaces or grant more resources\\.")
+          expectedExceptionsMessageRegExp = "Workspace namespace/workspace.. needs 3000MB to start\\. " +
+                                            "Your account has 200MB available and 100MB in use\\. " +
+                                            "The workspace can't be start. Stop other workspaces or grant more resources\\.")
     public void shouldThrowLimitExceedExceptionIfAccountDoesNotHaveEnoughAvailableRamResource() throws Exception {
         doThrow(new NoEnoughResourcesException(singletonList(new ResourceImpl(RamResourceType.ID,
                                                                               200L,
@@ -167,15 +169,17 @@ public class LimitsCheckingWorkspaceManagerTest {
     }
 
     @Test(expectedExceptions = LimitExceededException.class,
-          expectedExceptionsMessageRegExp = "You are only allowed to create 5 workspaces.")
+          expectedExceptionsMessageRegExp = "You are not allowed to create more workspaces\\.")
     public void shouldThrowLimitExceedExceptionIfAccountDoesNotHaveEnoughAvailableWorkspaceResource() throws Exception {
         //given
-        doThrow(new NoEnoughResourcesException(singletonList(new ResourceImpl(WorkspaceResourceType.ID,
-                                                                              5,
-                                                                              WorkspaceResourceType.UNIT)),
+        doThrow(new NoEnoughResourcesException(emptyList(),
                                                emptyList(),
                                                emptyList()))
                 .when(resourceUsageManager).checkResourcesAvailability(any(), any());
+        doReturn(singletonList(new ResourceImpl(WorkspaceResourceType.ID,
+                                                5,
+                                                WorkspaceResourceType.UNIT)))
+                .when(resourceUsageManager).getTotalResources(anyString());
         LimitsCheckingWorkspaceManager manager = managerBuilder().setResourceUsageManager(resourceUsageManager)
                                                                  .build();
 
@@ -199,15 +203,17 @@ public class LimitsCheckingWorkspaceManagerTest {
     }
 
     @Test(expectedExceptions = LimitExceededException.class,
-          expectedExceptionsMessageRegExp = "You are only allowed to start 5 workspaces.")
+          expectedExceptionsMessageRegExp = "You are not allowed to start more workspaces\\.")
     public void shouldThrowLimitExceedExceptionIfAccountDoesNotHaveEnoughAvailableRuntimeResource() throws Exception {
         //given
-        doThrow(new NoEnoughResourcesException(singletonList(new ResourceImpl(RuntimeResourceType.ID,
-                                                                              5,
-                                                                              RuntimeResourceType.UNIT)),
+        doThrow(new NoEnoughResourcesException(emptyList(),
                                                emptyList(),
                                                emptyList()))
                 .when(resourceUsageManager).checkResourcesAvailability(any(), any());
+        doReturn(singletonList(new ResourceImpl(RuntimeResourceType.ID,
+                                                5,
+                                                RuntimeResourceType.UNIT)))
+                .when(resourceUsageManager).getTotalResources(anyString());
         LimitsCheckingWorkspaceManager manager = managerBuilder().setResourceUsageManager(resourceUsageManager)
                                                                  .build();
 

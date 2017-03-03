@@ -14,23 +14,16 @@
  */
 package com.codenvy.organization.spi.jpa;
 
-import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
-import com.codenvy.organization.api.event.PostOrganizationPersistedEvent;
 import com.codenvy.organization.spi.OrganizationDao;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
 import com.google.inject.persist.Transactional;
 
-import org.eclipse.che.api.core.ApiException;
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.Page;
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.core.notification.EventService;
-import org.eclipse.che.core.db.cascade.CascadeEventSubscriber;
 import org.eclipse.che.core.db.jpa.DuplicateKeyException;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -51,12 +44,10 @@ import static java.util.Objects.requireNonNull;
 public class JpaOrganizationDao implements OrganizationDao {
 
     private final Provider<EntityManager> managerProvider;
-    private final EventService            eventService;
 
     @Inject
-    public JpaOrganizationDao(Provider<EntityManager> managerProvider, EventService eventService) {
+    public JpaOrganizationDao(Provider<EntityManager> managerProvider) {
         this.managerProvider = managerProvider;
-        this.eventService = eventService;
     }
 
     @Override
@@ -137,7 +128,7 @@ public class JpaOrganizationDao implements OrganizationDao {
                                                          .setMaxResults(maxItems)
                                                          .setFirstResult((int)skipCount)
                                                          .getResultList();
-            final Long suborganizationsCount = manager.createNamedQuery("Organization.getSuborganizationsCount", Long.class)
+            final Long suborganizationsCount = manager.createNamedQuery("Organization.getByParentCount", Long.class)
                                                       .setParameter("parent", parent)
                                                       .getSingleResult();
 
@@ -147,12 +138,34 @@ public class JpaOrganizationDao implements OrganizationDao {
         }
     }
 
-    @Transactional(rollbackOn = {RuntimeException.class, ApiException.class})
-    protected void doCreate(OrganizationImpl organization) throws ConflictException, ServerException {
+    @Override
+    @Transactional
+    public Page<OrganizationImpl> getSuborganizations(String parentQualifiedName, int maxItems, long skipCount) throws ServerException {
+        requireNonNull(parentQualifiedName, "Required non-null parent");
+        checkArgument(skipCount <= Integer.MAX_VALUE, "The number of items to skip can't be greater than " + Integer.MAX_VALUE);
+        try {
+            final EntityManager manager = managerProvider.get();
+            List<OrganizationImpl> result = manager.createNamedQuery("Organization.getSuborganizations", OrganizationImpl.class)
+                                                   .setParameter("qualifiedName", parentQualifiedName + "/%")
+                                                   .setMaxResults(maxItems)
+                                                   .setFirstResult((int)skipCount)
+                                                   .getResultList();
+
+            final long suborganizationsCount = manager.createNamedQuery("Organization.getSuborganizationsCount", Long.class)
+                                                      .setParameter("qualifiedName", parentQualifiedName + "/%")
+                                                      .getSingleResult();
+
+            return new Page<>(result, skipCount, maxItems, suborganizationsCount);
+        } catch (RuntimeException e) {
+            throw new ServerException(e.getLocalizedMessage(), e);
+        }
+    }
+
+    @Transactional
+    protected void doCreate(OrganizationImpl organization) {
         EntityManager manager = managerProvider.get();
         manager.persist(organization);
         manager.flush();
-        eventService.publish(new PostOrganizationPersistedEvent(organization)).propagateException();
     }
 
     @Transactional
@@ -165,60 +178,13 @@ public class JpaOrganizationDao implements OrganizationDao {
         manager.flush();
     }
 
-    @Transactional(rollbackOn = {RuntimeException.class, ServerException.class})
-    protected void doRemove(String organizationId) throws ServerException {
+    @Transactional
+    protected void doRemove(String organizationId) {
         final EntityManager manager = managerProvider.get();
         final OrganizationImpl organization = manager.find(OrganizationImpl.class, organizationId);
         if (organization != null) {
-            eventService.publish(new BeforeOrganizationRemovedEvent(new OrganizationImpl(organization))).propagateException();
             manager.remove(organization);
             manager.flush();
-        }
-    }
-
-    @Singleton
-    public static class RemoveSuborganizationsBeforeParentOrganizationRemovedEventSubscriber
-            extends CascadeEventSubscriber<BeforeOrganizationRemovedEvent> {
-        private static final int PAGE_SIZE = 100;
-
-        @Inject
-        private EventService eventService;
-
-        @Inject
-        private OrganizationDao organizationDao;
-
-        @PostConstruct
-        public void subscribe() {
-            eventService.subscribe(this, BeforeOrganizationRemovedEvent.class);
-        }
-
-        @PreDestroy
-        public void unsubscribe() {
-            eventService.unsubscribe(this, BeforeOrganizationRemovedEvent.class);
-        }
-
-        @Override
-        public void onCascadeEvent(BeforeOrganizationRemovedEvent event) throws Exception {
-            removeSuborganizations(event.getOrganization().getId(), PAGE_SIZE);
-        }
-
-        /**
-         * Removes suborganizations of given parent organization page by page
-         *
-         * @param organizationId
-         *         parent organization id
-         * @param pageSize
-         *         number of items which should removed by one request
-         */
-        void removeSuborganizations(String organizationId, int pageSize) throws ServerException {
-            Page<OrganizationImpl> suborganizationsPage;
-            do {
-                // skip count always equals to 0 because elements will be shifted after removing previous items
-                suborganizationsPage = organizationDao.getByParent(organizationId, pageSize, 0);
-                for (OrganizationImpl suborganization : suborganizationsPage.getItems()) {
-                    organizationDao.remove(suborganization.getId());
-                }
-            } while (suborganizationsPage.hasNextPage());
         }
     }
 }

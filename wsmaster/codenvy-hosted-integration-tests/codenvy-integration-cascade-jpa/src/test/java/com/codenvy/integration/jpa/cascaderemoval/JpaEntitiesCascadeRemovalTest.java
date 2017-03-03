@@ -27,18 +27,23 @@ import com.codenvy.api.workspace.server.spi.jpa.JpaStackPermissionsDao;
 import com.codenvy.api.workspace.server.stack.StackDomain;
 import com.codenvy.api.workspace.server.stack.StackPermissionsImpl;
 import com.codenvy.organization.api.OrganizationJpaModule;
-import com.codenvy.organization.api.event.BeforeOrganizationRemovedEvent;
+import com.codenvy.organization.api.OrganizationManager;
+import com.codenvy.organization.api.listener.RemoveOrganizationOnLastUserRemovedEventSubscriber;
 import com.codenvy.organization.api.permissions.OrganizationDomain;
-import com.codenvy.organization.api.permissions.RemoveOrganizationOnLastUserRemovedEventSubscriber;
+import com.codenvy.organization.api.resource.OrganizationResourcesDistributor;
+import com.codenvy.organization.shared.model.Organization;
 import com.codenvy.organization.spi.MemberDao;
-import com.codenvy.organization.spi.OrganizationDao;
-import com.codenvy.organization.spi.OrganizationDistributedResourcesDao;
 import com.codenvy.organization.spi.impl.MemberImpl;
-import com.codenvy.organization.spi.impl.OrganizationDistributedResourcesImpl;
 import com.codenvy.organization.spi.impl.OrganizationImpl;
-import com.codenvy.organization.spi.jpa.JpaOrganizationDistributedResourcesDao.RemoveOrganizationDistributedResourcesSubscriber;
+import com.codenvy.resource.api.ResourceLockKeyProvider;
+import com.codenvy.resource.api.ResourceUsageTracker;
+import com.codenvy.resource.api.ResourcesReserveTracker;
+import com.codenvy.resource.api.license.ResourcesProvider;
+import com.codenvy.resource.api.type.RamResourceType;
+import com.codenvy.resource.api.type.ResourceType;
 import com.codenvy.resource.spi.FreeResourcesLimitDao;
 import com.codenvy.resource.spi.impl.FreeResourcesLimitImpl;
+import com.codenvy.resource.spi.impl.ProvidedResourcesImpl;
 import com.codenvy.resource.spi.impl.ResourceImpl;
 import com.codenvy.resource.spi.jpa.JpaFreeResourcesLimitDao;
 import com.google.inject.AbstractModule;
@@ -47,12 +52,14 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.Stage;
 import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.google.inject.persist.jpa.JpaPersistModule;
 
 import org.eclipse.che.account.api.AccountManager;
 import org.eclipse.che.account.api.AccountModule;
-import org.eclipse.che.account.event.BeforeAccountRemovedEvent;
+import org.eclipse.che.account.spi.AccountDao;
+import org.eclipse.che.account.spi.AccountImpl;
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
@@ -83,7 +90,9 @@ import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
 import org.eclipse.che.api.workspace.server.model.impl.stack.StackImpl;
 import org.eclipse.che.api.workspace.server.spi.StackDao;
 import org.eclipse.che.api.workspace.server.spi.WorkspaceDao;
+import org.eclipse.che.commons.env.EnvironmentContext;
 import org.eclipse.che.commons.lang.Pair;
+import org.eclipse.che.commons.subject.SubjectImpl;
 import org.eclipse.che.commons.test.db.H2JpaCleaner;
 import org.eclipse.che.commons.test.tck.TckResourcesCleaner;
 import org.eclipse.che.core.db.DBInitializer;
@@ -106,6 +115,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import static com.codenvy.api.permission.server.AbstractPermissionsDomain.SET_PERMISSIONS;
+import static com.codenvy.integration.jpa.cascaderemoval.TestObjectsFactory.createAccount;
 import static com.codenvy.integration.jpa.cascaderemoval.TestObjectsFactory.createFactory;
 import static com.codenvy.integration.jpa.cascaderemoval.TestObjectsFactory.createFreeResourcesLimit;
 import static com.codenvy.integration.jpa.cascaderemoval.TestObjectsFactory.createPreferences;
@@ -119,6 +129,7 @@ import static com.codenvy.integration.jpa.cascaderemoval.TestObjectsFactory.crea
 import static com.codenvy.integration.jpa.cascaderemoval.TestObjectsFactory.createWorkspace;
 import static com.codenvy.resource.spi.jpa.JpaFreeResourcesLimitDao.RemoveFreeResourcesLimitSubscriber;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.eclipse.che.commons.test.db.H2TestHelper.inMemoryDefault;
 import static org.mockito.Mockito.when;
@@ -136,24 +147,25 @@ import static org.testng.Assert.fail;
  */
 public class JpaEntitiesCascadeRemovalTest {
 
-    private Injector                            injector;
-    private EventService                        eventService;
-    private PreferenceDao                       preferenceDao;
-    private UserDao                             userDao;
-    private ProfileDao                          profileDao;
-    private WorkspaceDao                        workspaceDao;
-    private SnapshotDao                         snapshotDao;
-    private SshDao                              sshDao;
-    private FactoryDao                          factoryDao;
-    private RecipeDao                           recipeDao;
-    private StackDao                            stackDao;
-    private WorkerDao                           workerDao;
-    private JpaRecipePermissionsDao             recipePermissionsDao;
-    private JpaStackPermissionsDao              stackPermissionsDao;
-    private FreeResourcesLimitDao               freeResourcesLimitDao;
-    private OrganizationDao                     organizationDao;
-    private MemberDao                           memberDao;
-    private OrganizationDistributedResourcesDao organizationDistributedResourcesDao;
+    private Injector                         injector;
+    private EventService                     eventService;
+    private PreferenceDao                    preferenceDao;
+    private AccountDao                       accountDao;
+    private UserDao                          userDao;
+    private ProfileDao                       profileDao;
+    private WorkspaceDao                     workspaceDao;
+    private SnapshotDao                      snapshotDao;
+    private SshDao                           sshDao;
+    private FactoryDao                       factoryDao;
+    private RecipeDao                        recipeDao;
+    private StackDao                         stackDao;
+    private WorkerDao                        workerDao;
+    private JpaRecipePermissionsDao          recipePermissionsDao;
+    private JpaStackPermissionsDao           stackPermissionsDao;
+    private FreeResourcesLimitDao            freeResourcesLimitDao;
+    private OrganizationManager              organizationManager;
+    private MemberDao                        memberDao;
+    private OrganizationResourcesDistributor organizationResourcesDistributor;
 
     /** User is a root of dependency tree. */
     private UserImpl user;
@@ -161,6 +173,8 @@ public class JpaEntitiesCascadeRemovalTest {
     private UserImpl user2;
     private UserImpl user3;
 
+    private AccountImpl account;
+    private AccountImpl organizationalAccount;
 
     /** Profile depends on user. */
     private ProfileImpl profile;
@@ -173,8 +187,10 @@ public class JpaEntitiesCascadeRemovalTest {
     private WorkspaceImpl workspace1;
     private WorkspaceImpl workspace2;
 
-    //** to test workers */
+    /** to test workers */
     private WorkspaceImpl workspace3;
+    /** to test workspace removing after organization removing */
+    private WorkspaceImpl workspace4;
 
     /** SshPairs depend on user. */
     private SshPairImpl sshPair1;
@@ -201,9 +217,9 @@ public class JpaEntitiesCascadeRemovalTest {
     private StackImpl stack3;
 
     /** Organization depends on user via permissions */
-    private OrganizationImpl organization;
-    private OrganizationImpl childOrganization;
-    private OrganizationImpl organization2;
+    private Organization organization;
+    private Organization childOrganization;
+    private Organization organization2;
 
     /** Free resources limit depends on user via personal account */
     private FreeResourcesLimitImpl freeResourcesLimit;
@@ -242,10 +258,30 @@ public class JpaEntitiesCascadeRemovalTest {
                 bind(Boolean.class).annotatedWith(Names.named("che.workspace.auto_snapshot")).toInstance(false);
                 bind(Boolean.class).annotatedWith(Names.named("che.workspace.auto_restore")).toInstance(false);
                 bind(WorkspaceSharedPool.class).toInstance(new WorkspaceSharedPool("cached", null, null));
+
+                bind(String[].class).annotatedWith(Names.named("che.auth.reserved_user_names")).toInstance(new String[0]);
+                bind(RemoveOrganizationOnLastUserRemovedEventSubscriber.class).asEagerSingleton();
+
+                Multibinder.newSetBinder(binder(), ResourceLockKeyProvider.class);
+                Multibinder.newSetBinder(binder(), ResourceUsageTracker.class);
+                Multibinder.newSetBinder(binder(), ResourcesReserveTracker.class);
+                Multibinder.newSetBinder(binder(), ResourceType.class)
+                           .addBinding().to(RamResourceType.class);
+                Multibinder.newSetBinder(binder(), ResourcesProvider.class)
+                           .addBinding().toInstance((accountId) -> singletonList(new ProvidedResourcesImpl("test",
+                                                                                                           null,
+                                                                                                           accountId,
+                                                                                                           -1L,
+                                                                                                           -1L,
+                                                                                                           singletonList(new ResourceImpl(
+                                                                                                                   RamResourceType.ID,
+                                                                                                                   1024,
+                                                                                                                   RamResourceType.UNIT)))));
             }
         });
 
         eventService = injector.getInstance(EventService.class);
+        accountDao = injector.getInstance(AccountDao.class);
         userDao = injector.getInstance(UserDao.class);
         preferenceDao = injector.getInstance(PreferenceDao.class);
         profileDao = injector.getInstance(ProfileDao.class);
@@ -257,9 +293,9 @@ public class JpaEntitiesCascadeRemovalTest {
         recipeDao = injector.getInstance(RecipeDao.class);
         workerDao = injector.getInstance(WorkerDao.class);
         freeResourcesLimitDao = injector.getInstance(FreeResourcesLimitDao.class);
-        organizationDao = injector.getInstance(OrganizationDao.class);
+        organizationManager = injector.getInstance(OrganizationManager.class);
         memberDao = injector.getInstance(MemberDao.class);
-        organizationDistributedResourcesDao = injector.getInstance(OrganizationDistributedResourcesDao.class);
+        organizationResourcesDistributor = injector.getInstance(OrganizationResourcesDistributor.class);
 
         TypeLiteral<Set<PermissionsDao<? extends AbstractPermissions>>> lit =
                 new TypeLiteral<Set<PermissionsDao<? extends AbstractPermissions>>>() {
@@ -284,6 +320,7 @@ public class JpaEntitiesCascadeRemovalTest {
         createTestData();
 
         // Remove the user, all entries must be removed along with the user
+        accountDao.remove(account.getId());
         userDao.remove(user.getId());
         userDao.remove(user2.getId());
 
@@ -292,7 +329,7 @@ public class JpaEntitiesCascadeRemovalTest {
         assertNull(notFoundToNull(() -> profileDao.getById(user.getId())));
         assertTrue(preferenceDao.getPreferences(user.getId()).isEmpty());
         assertTrue(sshDao.get(user.getId()).isEmpty());
-        assertTrue(workspaceDao.getByNamespace(user.getId()).isEmpty());
+        assertTrue(workspaceDao.getByNamespace(account.getName()).isEmpty());
         assertTrue(factoryDao.getByAttribute(0, 0, singletonList(Pair.of("creator.userId", user.getId()))).isEmpty());
         assertTrue(snapshotDao.findSnapshots(workspace1.getId()).isEmpty());
         assertTrue(snapshotDao.findSnapshots(workspace2.getId()).isEmpty());
@@ -311,13 +348,15 @@ public class JpaEntitiesCascadeRemovalTest {
         assertNotNull(notFoundToNull(() -> stackDao.getById(stack3.getId())));
         assertFalse(stackPermissionsDao.getByUser(user3.getId()).isEmpty());
         // Check existence of organizations
-        assertNull(notFoundToNull(() -> organizationDao.getById(organization.getId())));
+        assertNull(notFoundToNull(() -> organizationManager.getById(organization.getId())));
         assertEquals(memberDao.getMembers(organization.getId(), 1, 0).getTotalItemsCount(), 0);
+        // Check workspace is removed along with organization account
+        assertNull(notFoundToNull(() -> workspaceDao.get(workspace4.getId())));
 
-        assertNull(notFoundToNull(() -> organizationDao.getById(childOrganization.getId())));
+        assertNull(notFoundToNull(() -> organizationManager.getById(childOrganization.getId())));
         assertEquals(memberDao.getMembers(childOrganization.getId(), 1, 0).getTotalItemsCount(), 0);
 
-        assertNotNull(notFoundToNull(() -> organizationDao.getById(organization2.getId())));
+        assertNotNull(notFoundToNull(() -> organizationManager.getById(organization2.getId())));
         assertEquals(memberDao.getMembers(organization2.getId(), 1, 0).getTotalItemsCount(), 1);
 
         // free resources limit is removed
@@ -325,12 +364,12 @@ public class JpaEntitiesCascadeRemovalTest {
         assertNull(notFoundToNull(() -> freeResourcesLimitDao.get(user2.getId())));
 
         // distributed resources is removed
-        assertNull(notFoundToNull(() -> organizationDistributedResourcesDao.get(childOrganization.getId())));
+        assertNull(notFoundToNull(() -> organizationResourcesDistributor.get(childOrganization.getId())));
 
         //cleanup
         stackDao.remove(stack3.getId());
         memberDao.remove(organization2.getId(), user3.getId());
-        organizationDao.remove(organization2.getId());
+        organizationManager.remove(organization2.getId());
         userDao.remove(user3.getId());
     }
 
@@ -351,16 +390,16 @@ public class JpaEntitiesCascadeRemovalTest {
         // Check all the data rolled back
         assertNotNull(userDao.getById(user2.getId()));
         assertFalse(recipePermissionsDao.getByUser(user2.getId()).isEmpty());
-        assertFalse(stackPermissionsDao.getByUser(user2.getId()).isEmpty());
         assertNotNull(notFoundToNull(() -> recipeDao.getById(recipe1.getId())));
+        assertFalse(stackPermissionsDao.getByUser(user2.getId()).isEmpty());
         assertNotNull(notFoundToNull(() -> recipeDao.getById(recipe2.getId())));
         assertNotNull(notFoundToNull(() -> stackDao.getById(stack1.getId())));
         assertNotNull(notFoundToNull(() -> stackDao.getById(stack2.getId())));
-        assertNotNull(notFoundToNull(() -> freeResourcesLimitDao.get(user2.getId())));
-        assertNotNull(notFoundToNull(() -> organizationDao.getById(organization.getId())));
-        assertNotNull(notFoundToNull(() -> organizationDao.getById(childOrganization.getId())));
-        assertNotNull(notFoundToNull(() -> organizationDao.getById(organization2.getId())));
-        assertNotNull(notFoundToNull(() -> organizationDistributedResourcesDao.get(childOrganization.getId())));
+        assertNotNull(notFoundToNull(() -> freeResourcesLimitDao.get(account.getId())));
+        assertNotNull(notFoundToNull(() -> organizationManager.getById(organization.getId())));
+        assertNotNull(notFoundToNull(() -> organizationManager.getById(childOrganization.getId())));
+        assertNotNull(notFoundToNull(() -> organizationManager.getById(organization2.getId())));
+        assertFalse(organizationResourcesDistributor.getResourcesCaps(childOrganization.getId()).isEmpty());
         wipeTestData();
     }
 
@@ -368,15 +407,13 @@ public class JpaEntitiesCascadeRemovalTest {
     public Object[][] beforeRemoveActions() {
         return new Class[][] {
                 {RemoveStackOnLastUserRemovedEventSubscriber.class, BeforeUserRemovedEvent.class},
-                {RemoveOrganizationOnLastUserRemovedEventSubscriber.class, BeforeUserRemovedEvent.class},
-                {RemoveFreeResourcesLimitSubscriber.class, BeforeAccountRemovedEvent.class},
-                {RemoveOrganizationDistributedResourcesSubscriber.class,
-                 BeforeOrganizationRemovedEvent.class},
-                };
+                {RemoveOrganizationOnLastUserRemovedEventSubscriber.class, BeforeUserRemovedEvent.class}
+        };
     }
 
-    private void createTestData() throws ConflictException, ServerException {
+    private void createTestData() throws NotFoundException, ConflictException, ServerException {
         userDao.create(user = createUser("bobby"));
+        accountDao.create(account = createAccount("bobby"));
         // test permissions users
         userDao.create(user2 = createUser("worker"));
         userDao.create(user3 = createUser("stacker"));
@@ -385,10 +422,9 @@ public class JpaEntitiesCascadeRemovalTest {
 
         preferenceDao.setPreferences(user.getId(), preferences = createPreferences());
 
-        workspaceDao.create(workspace1 = createWorkspace("workspace1", user.getAccount()));
-        workspaceDao.create(workspace2 = createWorkspace("workspace2", user.getAccount()));
-        // to test workers - use another account
-        workspaceDao.create(workspace3 = createWorkspace("workspace3", user2.getAccount()));
+        workspaceDao.create(workspace1 = createWorkspace("workspace1", account));
+        workspaceDao.create(workspace2 = createWorkspace("workspace2", account));
+        workspaceDao.create(workspace3 = createWorkspace("workspace3", account));
 
         sshDao.create(sshPair1 = createSshPair(user.getId(), "service", "name1"));
         sshDao.create(sshPair2 = createSshPair(user.getId(), "service", "name2"));
@@ -425,29 +461,34 @@ public class JpaEntitiesCascadeRemovalTest {
         recipePermissionsDao.store(new RecipePermissionsImpl(user2.getId(), recipe1.getId(), asList(SET_PERMISSIONS, "read", "write")));
         recipePermissionsDao.store(new RecipePermissionsImpl(user2.getId(), recipe2.getId(), asList(SET_PERMISSIONS, "read", "execute")));
 
-        organizationDao.create(organization = new OrganizationImpl("org123", "testOrg", null));
-        organizationDao.create(childOrganization = new OrganizationImpl("suborg123", "childTestOrg", organization.getId()));
-        organizationDao.create(organization2 = new OrganizationImpl("org321", "anotherOrg", null));
+        //creator will have all permissions for newly created organization
+        prepareCreator(user.getId());
+        organization = organizationManager.create(new OrganizationImpl(null, "testOrg", null));
+        organizationalAccount = accountDao.getById(organization.getId());
+        workspaceDao.create(workspace4 = createWorkspace("workspace4", organizationalAccount));
+        organization2 = organizationManager.create(new OrganizationImpl(null, "anotherOrg", null));
+        prepareCreator(user2.getId());
+        childOrganization = organizationManager.create(new OrganizationImpl(null, "childTestOrg", organization.getId()));
 
-        memberDao.store(new MemberImpl(user.getId(), organization.getId(), singletonList(OrganizationDomain.SET_PERMISSIONS)));
-
-        memberDao.store(new MemberImpl(user.getId(), organization2.getId(), singletonList(OrganizationDomain.SET_PERMISSIONS)));
         memberDao.store(new MemberImpl(user2.getId(), organization2.getId(), singletonList(OrganizationDomain.SET_PERMISSIONS)));
-        memberDao.store(new MemberImpl(user2.getId(), childOrganization.getId(), singletonList(OrganizationDomain.SET_PERMISSIONS)));
         memberDao.store(new MemberImpl(user3.getId(), organization2.getId(), singletonList(OrganizationDomain.SET_PERMISSIONS)));
 
 
-        freeResourcesLimitDao.store(freeResourcesLimit = createFreeResourcesLimit(user.getId()));
-        freeResourcesLimitDao.store(freeResourcesLimit2 = createFreeResourcesLimit(user2.getId()));
+        freeResourcesLimitDao.store(freeResourcesLimit = createFreeResourcesLimit(account.getId()));
+        freeResourcesLimitDao.store(freeResourcesLimit2 = createFreeResourcesLimit(organization.getId()));
 
-        organizationDistributedResourcesDao.store(new OrganizationDistributedResourcesImpl(childOrganization.getId(),
-                                                                                           singletonList(new ResourceImpl("test",
-                                                                                                                          1024,
-                                                                                                                          "unit"))));
+        organizationResourcesDistributor.capResources(childOrganization.getId(),
+                                                      singletonList(new ResourceImpl(RamResourceType.ID,
+                                                                            1024,
+                                                                            RamResourceType.UNIT)));
+    }
+
+    private void prepareCreator(String userId) {
+        EnvironmentContext.getCurrent().setSubject(new SubjectImpl("userok", userId, "", false));
     }
 
     private void wipeTestData() throws ConflictException, ServerException, NotFoundException {
-        organizationDistributedResourcesDao.remove(childOrganization.getId());
+        organizationResourcesDistributor.capResources(childOrganization.getId(), emptyList());
 
         freeResourcesLimitDao.remove(freeResourcesLimit.getAccountId());
         freeResourcesLimitDao.remove(freeResourcesLimit2.getAccountId());
@@ -458,9 +499,9 @@ public class JpaEntitiesCascadeRemovalTest {
         memberDao.remove(organization2.getId(), user2.getId());
         memberDao.remove(organization2.getId(), user3.getId());
 
-        organizationDao.remove(childOrganization.getId());
-        organizationDao.remove(organization.getId());
-        organizationDao.remove(organization2.getId());
+        organizationManager.remove(childOrganization.getId());
+        organizationManager.remove(organization.getId());
+        organizationManager.remove(organization2.getId());
 
         snapshotDao.removeSnapshot(snapshot1.getId());
         snapshotDao.removeSnapshot(snapshot2.getId());
@@ -494,6 +535,7 @@ public class JpaEntitiesCascadeRemovalTest {
         workspaceDao.remove(workspace1.getId());
         workspaceDao.remove(workspace2.getId());
         workspaceDao.remove(workspace3.getId());
+        workspaceDao.remove(workspace4.getId());
 
         preferenceDao.remove(user3.getId());
         preferenceDao.remove(user2.getId());
@@ -507,7 +549,7 @@ public class JpaEntitiesCascadeRemovalTest {
         userDao.remove(user2.getId());
         userDao.remove(user.getId());
 
-
+        accountDao.remove(account.getId());
     }
 
     private static <T> T notFoundToNull(Callable<T> action) throws Exception {
