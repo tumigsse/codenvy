@@ -34,6 +34,7 @@ import {MemberItem} from './team-details/team-members/member-item/member-item.di
 import {MemberItemController} from './team-details/team-members/member-item/member-item.controller';
 
 import {TeamDetailsController} from './team-details/team-details.controller';
+import {TeamDetailsService} from './team-details/team-details.service';
 import {ListTeams} from './list/list-teams.directive';
 import {ListTeamsController} from './list/list-teams.controller';
 import {TeamItem} from './list/team-item/team-item.directive';
@@ -76,6 +77,7 @@ export class TeamsConfig {
     register.directive('memberItem', MemberItem);
 
     register.controller('TeamDetailsController', TeamDetailsController);
+    register.service('teamDetailsService', TeamDetailsService);
 
     let checkPersonalTeam = ($q: ng.IQService, codenvyTeam: CodenvyTeam) => {
       var defer = $q.defer();
@@ -95,7 +97,22 @@ export class TeamsConfig {
         }
       });
       return defer.promise;
-    }
+    };
+
+    let checkTeamDetails = ($q: ng.IQService, teamDetailsService: TeamDetailsService, $route: ng.route.IRouteService) => {
+      let defer = $q.defer();
+      let teamName = $route.current.params.teamName;
+      teamDetailsService.fetchTeamDetailsByName(teamName).then(() => {
+        teamDetailsService.fetchOwnerByTeamName(teamName).finally(() => {
+          defer.resolve();
+        });
+      }, (error: any) => {
+          // resolve it to show 'team not found page' in case with error
+          defer.resolve();
+      });
+
+      return defer.promise;
+    };
 
     let locationProvider = {
       title: (params: any) => {
@@ -105,7 +122,7 @@ export class TeamsConfig {
       controller: 'TeamDetailsController',
       controllerAs: 'teamDetailsController',
       resolve: {
-        check: ['$q', 'codenvyTeam', checkPersonalTeam]
+        check: ['$q', 'teamDetailsService', '$route', checkTeamDetails]
       }
     };
 

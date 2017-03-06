@@ -16,6 +16,7 @@
 import {CodenvyTeam} from '../../../../components/api/codenvy-team.factory';
 import {CodenvyPermissions} from '../../../../components/api/codenvy-permissions.factory';
 import {CodenvyUser} from '../../../../components/api/codenvy-user.factory';
+import {TeamDetailsService} from '../team-details.service';
 
 /**
  * @ngdoc controller
@@ -24,6 +25,10 @@ import {CodenvyUser} from '../../../../components/api/codenvy-user.factory';
  * @author Ann Shumilova
  */
 export class ListTeamMembersController {
+  /**
+   * Location service.
+   */
+  $location: ng.ILocationService;
 
   /**
    * Team API interaction.
@@ -57,10 +62,6 @@ export class ListTeamMembersController {
    * Promises service.
    */
   private $q: ng.IQService;
-  /**
-   * Location service.
-   */
-  $location: ng.ILocationService;
   /**
    * Lodash library.
    */
@@ -106,8 +107,9 @@ export class ListTeamMembersController {
    * Default constructor that is using resource
    * @ngInject for Dependency injection
    */
-  constructor(codenvyTeam: CodenvyTeam, codenvyPermissions: CodenvyPermissions, codenvyUser: CodenvyUser, cheProfile: any, confirmDialogService: any,
-              $mdDialog: angular.material.IDialogService, $q: ng.IQService, cheNotification: any, lodash: _.LoDashStatic, $location: ng.ILocationService) {
+  constructor(codenvyTeam: CodenvyTeam, codenvyPermissions: CodenvyPermissions, codenvyUser: CodenvyUser, cheProfile: any,
+              confirmDialogService: any, $mdDialog: angular.material.IDialogService, $q: ng.IQService, cheNotification: any,
+              lodash: _.LoDashStatic, $location: ng.ILocationService, teamDetailsService: TeamDetailsService) {
     this.codenvyTeam = codenvyTeam;
     this.codenvyPermissions = codenvyPermissions;
     this.cheProfile = cheProfile;
@@ -128,22 +130,32 @@ export class ListTeamMembersController {
     this.isBulkChecked = false;
     this.isNoSelected = true;
 
+    this.owner = teamDetailsService.getOwner();
+    this.team  = teamDetailsService.getTeam();
+
     this.fetchMembers();
   }
 
   /**
-   * Fetches the lis of team members.
+   * Fetches the list of team members.
    */
   fetchMembers(): void {
-    this.isLoading = true;
+    if (!this.team || !this.owner) {
+      return;
+    }
+    let permissions = this.codenvyPermissions.getTeamPermissions(this.team.id);
+    if (permissions && permissions.length) {
+      this.isLoading = false;
+      this.formUserList();
+    } else {
+      this.isLoading = true;
+    }
     this.codenvyPermissions.fetchTeamPermissions(this.team.id).then(() => {
       this.isLoading = false;
       this.formUserList();
     }, (error: any) => {
       this.isLoading = false;
-      if (error.status === 304) {
-        this.formUserList();
-      } else {
+      if (error.status !== 304) {
         this.cheNotification.showError(error.data && error.data.message ? error.data.message : 'Failed to retrieve team permissions.');
       }
     });
@@ -158,7 +170,7 @@ export class ListTeamMembersController {
 
     let noOwnerPermissions = true;
 
-    permissions.forEach((permission) => {
+    permissions.forEach((permission: any) => {
       let userId = permission.userId;
       let user = this.cheProfile.getProfileFromId(userId);
 
@@ -258,7 +270,7 @@ export class ListTeamMembersController {
     this.isNoSelected = true;
     this.isAllSelected = true;
 
-    Object.keys(this.membersSelectedStatus).forEach((key) => {
+    Object.keys(this.membersSelectedStatus).forEach((key: string) => {
       if (this.membersSelectedStatus[key]) {
         this.isNoSelected = false;
       } else {
@@ -380,7 +392,7 @@ export class ListTeamMembersController {
       return;
     }
 
-    membersSelectedStatusKeys.forEach((key) => {
+    membersSelectedStatusKeys.forEach((key: string) => {
       if (this.membersSelectedStatus[key] === true) {
         checkedKeys.push(key);
       }
@@ -403,12 +415,14 @@ export class ListTeamMembersController {
           currentUserPromise = this.codenvyPermissions.removeTeamPermissions(this.team.id, id);
           continue;
         }
-        let promise = this.codenvyPermissions.removeTeamPermissions(this.team.id, id).then(() => {},
+        let promise = this.codenvyPermissions.removeTeamPermissions(this.team.id, id).then(() => {
+            ng.noop();
+          },
           (error: any) => {
             removalError = error;
         });
         removeMembersPromises.push(promise);
-      };
+      }
 
       if (currentUserPromise) {
         removeMembersPromises.push(currentUserPromise);
