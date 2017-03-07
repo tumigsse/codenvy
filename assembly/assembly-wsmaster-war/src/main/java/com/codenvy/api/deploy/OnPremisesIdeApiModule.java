@@ -341,7 +341,6 @@ public class OnPremisesIdeApiModule extends AbstractModule {
 
         install(new InstrumentationModule());
         bind(org.eclipse.che.api.ssh.server.SshService.class);
-        bind(org.eclipse.che.api.environment.server.MachineService.class);
 
         install(new ScheduleModule());
 
