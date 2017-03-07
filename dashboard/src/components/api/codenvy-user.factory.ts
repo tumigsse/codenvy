@@ -13,6 +13,36 @@
  * from Codenvy S.A..
  */
 'use strict';
+import {CodenvyLicense} from './codenvy-license.factory';
+import {CodenvyPermissions} from './codenvy-permissions.factory';
+
+interface IremoteUserAPI<T> extends ng.resource.IResourceClass<T> {
+  findByID(data: {userId: string}): ng.resource.IResource<T>;
+  findByAlias(data: {alias: string}): ng.resource.IResource<T>;
+  findByName(data: {name: string}): ng.resource.IResource<T>;
+  inRole: any;
+  getUsers: any;
+  createUser: any;
+  setPassword: any;
+  removeUserById: any;
+}
+
+export interface IPageFromResponse {
+  users: any;
+  links?: Map<string, string>;
+}
+
+export interface IPageData {
+  users: Array<any>;
+  links: Map<string, string>;
+}
+
+export interface IPagesInfo {
+  count?: number;
+  currentPageNumber?: number;
+  countOfPages?: number;
+}
+
 
 /**
  * This class is handling the user API retrieval
@@ -20,11 +50,26 @@
  */
 export class CodenvyUser {
 
+  private $q: ng.IQService;
+  private $resource: ng.resource.IResourceService;
+  private $cookies: ng.cookies.ICookiesService;
+  private codenvyLicense: CodenvyLicense;
+  private codenvyPermissions: CodenvyPermissions;
+  private useridMap: Map<string, any>;
+  private userAliasMap: Map<string, any>;
+  private userNameMap: Map<string, any>;
+  private usersMap: Map<string, any>;
+  private userPagesMap: Map<number, any>;
+  private pageInfo: { count?: number; currentPageNumber?: number; countOfPages?: number };
+  private logoutAPI: ng.resource.IResourceClass<any>;
+  private remoteUserAPI: IremoteUserAPI<any>;
+  private user: any;
+
   /**
    * Default constructor that is using resource
    * @ngInject for Dependency injection
    */
-  constructor($q, $resource, $cookies, codenvyLicense, codenvyPermissions) {
+  constructor($q: ng.IQService, $resource: ng.resource.IResourceService, $cookies: ng.cookies.ICookiesService, codenvyLicense: CodenvyLicense, codenvyPermissions: CodenvyPermissions) {
     this.$q = $q;
     this.$resource = $resource;
     this.$cookies = $cookies;
@@ -32,7 +77,7 @@ export class CodenvyUser {
     this.codenvyPermissions = codenvyPermissions;
 
     // remote call
-    this.remoteUserAPI = this.$resource('/api/user', {}, {
+    this.remoteUserAPI = <IremoteUserAPI<any>>this.$resource('/api/user', {}, {
       findByID: {method: 'GET', url: '/api/user/:userId'},
       findByAlias: {method: 'GET', url: '/api/user/find?email=:alias'},
       findByName: {method: 'GET', url: '/api/user/find?name=:name'},
@@ -49,7 +94,7 @@ export class CodenvyUser {
         url: '/api/admin/user?maxItems=:maxItems&skipCount=:skipCount',
         isArray: false,
         responseType: 'json',
-        transformResponse: (data, headersGetter) => {
+        transformResponse: (data: any, headersGetter: any) => {
           return this._getPageFromResponse(data, headersGetter('link'));
         }
       },
@@ -73,22 +118,28 @@ export class CodenvyUser {
     // page users by relative link
     this.userPagesMap = new Map();
 
-    //pages info
+    // pages info
     this.pageInfo = {};
 
-    //Current user has to be for sure fetched:
+    // current user has to be for sure fetched:
     this.fetchUser();
   }
 
   /**
    * Create new user
-   * @param name - new user name
-   * @param email - new user e-mail
-   * @param password - new user password
-   * @returns {*}
+   * @param name {string} - new user name
+   * @param email {string} - new user e-mail
+   * @param password {string} - new user password
+   * @returns {ng.IPromise<any>}
    */
-  createUser(name, email, password) {
-    let data = {
+  createUser(name: string, email: string, password: string): ng.IPromise<any> {
+    let data: {
+      password: string;
+      name: string;
+      email?: string;
+    };
+
+    data = {
       password: password,
       name: name
     };
@@ -100,24 +151,28 @@ export class CodenvyUser {
     let promise = this.remoteUserAPI.createUser(data).$promise;
 
     // check if was OK or not
-    promise.then((user) => {
-      //update users map
-      this.usersMap.set(user.id, user);//add user
-      this.codenvyLicense.fetchLicenseLegality();//fetch license legality
+    promise.then((user: any) => {
+      // update users map
+      // add user
+      this.usersMap.set(user.id, user);
+      // fetch license legality
+      this.codenvyLicense.fetchLicenseLegality();
     });
 
     return promise;
   }
 
-  _getPageFromResponse(data, headersLink) {
-    let links = new Map();
+  _getPageFromResponse(data: any, headersLink: string): IPageFromResponse {
+    let links: Map<string, string> = new Map();
     if (!headersLink) {
       return {users: data};
     }
     let pattern = new RegExp('<([^>]+?)>.+?rel="([^"]+?)"', 'g');
     let result;
-    while (result = pattern.exec(headersLink)) { //look for pattern
-      links.set(result[2], result[1]);//add link
+    // look for pattern
+    while (result = pattern.exec(headersLink)) {
+      // add link
+      links.set(result[2], result[1]);
     }
     return {
       users: data,
@@ -125,14 +180,13 @@ export class CodenvyUser {
     };
   }
 
-  _getPageParamByLink(pageLink) {
+  _getPageParamByLink(pageLink: string): any {
     let lastPageParamMap = new Map();
     let pattern = new RegExp('([_\\w]+)=([\\w]+)', 'g');
     let result;
     while (result = pattern.exec(pageLink)) {
       lastPageParamMap.set(result[1], result[2]);
     }
-
     let skipCount = lastPageParamMap.get('skipCount');
     let maxItems = lastPageParamMap.get('maxItems');
     if (!maxItems || maxItems === 0) {
@@ -144,7 +198,7 @@ export class CodenvyUser {
     };
   }
 
-  _updateCurrentPage() {
+  _updateCurrentPage(): void {
     let pageData = this.userPagesMap.get(this.pageInfo.currentPageNumber);
     if (!pageData) {
       return;
@@ -153,31 +207,34 @@ export class CodenvyUser {
     if (!pageData.users) {
       return;
     }
-    pageData.users.forEach((user) => {
-      this.usersMap.set(user.id, user);//add user
+    pageData.users.forEach((user: any) => {
+      // add user
+      this.usersMap.set(user.id, user);
     });
   }
 
-  _updateCurrentPageUsers(users) {
+  _updateCurrentPageUsers(users: Array<any>): void {
     this.usersMap.clear();
     if (!users) {
       return;
     }
-    users.forEach((user) => {
-      this.usersMap.set(user.id, user);//add user
+    users.forEach((user: any) => {
+      // add user
+      this.usersMap.set(user.id, user);
     });
   }
 
   /**
    * Update user page links by relative direction ('first', 'prev', 'next', 'last')
+   * @param data {IPageData}
    */
-  _updatePagesData(data) {
+  _updatePagesData(data: IPageData): void {
     if (!data.links) {
       return;
     }
     let firstPageLink = data.links.get('first');
     if (firstPageLink) {
-      let firstPageData = {link: firstPageLink};
+      let firstPageData: { users?: Array<any>; link?: string; } = {link: firstPageLink};
       if (this.pageInfo.currentPageNumber === 1) {
         firstPageData.users = data.users;
       }
@@ -190,7 +247,7 @@ export class CodenvyUser {
       let pageParam = this._getPageParamByLink(lastPageLink);
       this.pageInfo.countOfPages = pageParam.skipCount / pageParam.maxItems + 1;
       this.pageInfo.count = pageParam.skipCount;
-      let lastPageData = {link: lastPageLink};
+      let lastPageData: { users?: Array<any>; link?: string; } = {link: lastPageLink};
       if (this.pageInfo.currentPageNumber === this.pageInfo.countOfPages) {
         lastPageData.users = data.users;
       }
@@ -218,23 +275,23 @@ export class CodenvyUser {
 
   /**
    * Gets the pageInfo
-   * @returns {Object}
+   * @returns {IPagesInfo}
    */
-  getPagesInfo() {
+  getPagesInfo(): IPagesInfo {
     return this.pageInfo;
   }
 
   /**
    * Ask for loading the users in asynchronous way
    * If there are no changes, it's not updated
-   * @param maxItems - the max number of items to return
-   * @param skipCount - the number of items to skip
-   * @returns {*} the promise
+   * @param maxItems {number} - the number of max items to return
+   * @param skipCount {number} - the number of items to skip
+   * @returns {ng.IPromise<any>} the promise
    */
-  fetchUsers(maxItems, skipCount) {
+  fetchUsers(maxItems: number, skipCount: number): ng.IPromise<any> {
     let promise = this.remoteUserAPI.getUsers({maxItems: maxItems, skipCount: skipCount}).$promise;
 
-    promise.then((data) => {
+    promise.then((data: any) => {
       this.pageInfo.currentPageNumber = skipCount / maxItems + 1;
       this._updateCurrentPageUsers(data.users);
       this._updatePagesData(data);
@@ -246,10 +303,10 @@ export class CodenvyUser {
   /**
    * Ask for loading the users page in asynchronous way
    * If there are no changes, it's not updated
-   * @param pageKey - the key of page ('first', 'prev', 'next', 'last'  or '1', '2', '3' ...)
-   * @returns {*} the promise
+   * @param pageKey {string} - the key of page ('first', 'prev', 'next', 'last'  or '1', '2', '3' ...)
+   * @returns {ng.IPromise<any>} the promise
    */
-  fetchUsersPage(pageKey) {
+  fetchUsersPage(pageKey: string): ng.IPromise<any> {
     let deferred = this.$q.defer();
     let pageNumber;
     if ('first' === pageKey) {
@@ -272,12 +329,12 @@ export class CodenvyUser {
     if (pageData.link) {
       this.pageInfo.currentPageNumber = pageNumber;
       let promise = this.remoteUserAPI.getUsers(this._getPageParamByLink(pageData.link)).$promise;
-      promise.then((data) => {
+      promise.then((data: any) => {
         this._updatePagesData(data);
         pageData.users = data.users;
         this._updateCurrentPage();
         deferred.resolve(data);
-      }, (error) => {
+      }, (error: any) => {
         if (error && error.status === 304) {
           this._updateCurrentPage();
         }
@@ -299,17 +356,19 @@ export class CodenvyUser {
 
   /**
    * Performs user deleting by the given user ID.
-   * @param userId the user id
-   * @returns {*} the promise
+   * @param userId {string} the user id
+   * @returns {ng.IPromise<any>} the promise
    */
-  deleteUserById(userId) {
+  deleteUserById(userId: string): ng.IPromise<any> {
     let promise = this.remoteUserAPI.removeUserById({userId: userId}).$promise;
 
     // check if was OK or not
     promise.then(() => {
-      //update users map
-      this.usersMap.delete(userId);//remove user
-      this.codenvyLicense.fetchLicenseLegality();//fetch license legality
+      // update users map
+      // remove user
+      this.usersMap.delete(userId);
+      // fetch license legality
+      this.codenvyLicense.fetchLicenseLegality();
     });
 
     return promise;
@@ -317,9 +376,9 @@ export class CodenvyUser {
 
   /**
    * Performs current user deletion.
-   * @returns {*} the promise
+   * @returns {ng.IPromise<any>} the promise
    */
-  deleteCurrentUser() {
+  deleteCurrentUser(): ng.IPromise<any> {
     let userId = this.user.id;
     let promise = this.remoteUserAPI.removeUserById({userId: userId}).$promise;
     return promise;
@@ -327,51 +386,68 @@ export class CodenvyUser {
 
   /**
    * Performs logout of current user.
-   * @returns {y.ResourceClass.prototype.$promise|*|$promise|T.$promise|S.$promise}
+   * @returns {ng.IPromise<any>}
    */
-  logout() {
+  logout(): ng.IPromise<any> {
     let data = {token: this.$cookies['session-access-key']};
     let promise = this.logoutAPI.save(data).$promise;
     return promise;
   }
 
   /**
-   * Gets the user
-   * @return user
+   * Gets the user.
+   * @return {any}
    */
-  getUser() {
+  getUser(): any {
     return this.user;
   }
 
   /**
-   * Fetch the user
+   * Fetch the user.
+   * @returns {ng.IPromise<any>}
    */
-  fetchUser() {
+  fetchUser(): ng.IPromise<any> {
     let promise = this.remoteUserAPI.get().$promise;
     // check if if was OK or not
-    promise.then((user) => {
+    promise.then((user: any) => {
       this.user = user;
-      });
+    });
 
     return promise;
   }
 
-  fetchUserId(userId) {
+  /**
+   * Fetch the user by Id.
+   * @param userId {string} the user id
+   *
+   * @returns {ng.IPromise<any>}
+   */
+  fetchUserId(userId: string): ng.IPromise<any> {
     let promise = this.remoteUserAPI.findByID({userId: userId}).$promise;
-    let parsedResultPromise = promise.then((user) => {
+    let parsedResultPromise = promise.then((user: any) => {
       this.useridMap.set(userId, user);
     });
 
     return parsedResultPromise;
   }
 
-  getUserFromId(userId) {
+  /**
+   * Gets the user by Id.
+   * @returns {any}
+   */
+  getUserFromId(userId: string): any {
     return this.useridMap.get(userId);
   }
 
-  fetchUserByAlias(alias) {
+  /**
+   * Fetch the user by Alias.
+   * @param alias {string} the user alias
+   *
+   * @returns {ng.IPromise<any>}
+   */
+  fetchUserByAlias(alias: string) {
     let promise = this.remoteUserAPI.findByAlias({alias: alias}).$promise;
-    let parsedResultPromise = promise.then((user) => {
+    let parsedResultPromise = promise.then((user: any) => {
       this.useridMap.set(user.id, user);
       this.userAliasMap.set(alias, user);
     });
@@ -379,24 +455,54 @@ export class CodenvyUser {
     return parsedResultPromise;
   }
 
-  getUserByAlias(userAlias) {
-    return this.userAliasMap.get(userAlias);
+  /**
+   * Gets the user by Alias.
+   * @param alias {string} the user alias
+   *
+   * @returns {any}
+   */
+  getUserByAlias(alias: string) {
+    return this.userAliasMap.get(alias);
   }
 
-  fetchUserByName(name: string) {
+  /**
+   * Fetch the user by Name.
+   * @param name {string} the user name
+   *
+   * @returns {ng.IPromise<any>}
+   */
+  fetchUserByName(name: string): ng.IPromise<any> {
     let promise = this.remoteUserAPI.findByName({name: name}).$promise;
     let resultPromise = promise.then((user: any) => {
       this.userNameMap.set(name, user);
+      return user;
+    }, (error: any) => {
+      if (error.status === 304) {
+        return this.userNameMap.get(name);
+      }
+      return this.$q.reject(error);
     });
 
     return resultPromise;
   }
 
-  getUserByName(name: string) {
+  /**
+   * Gets the user by Name.
+   * @param name {string} the user name
+   *
+   * @returns {any}
+   */
+  getUserByName(name: string): any {
     return this.userNameMap.get(name);
   }
 
-  setPassword(password) {
+  /**
+   * Sets user's password.
+   * @param password {string} the user password
+   *
+   * @returns {ng.IPromise<any>}
+   */
+  setPassword(password: string): ng.IPromise<any> {
     return this.remoteUserAPI.setPassword('password=' + password).$promise;
   }
 }

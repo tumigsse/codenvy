@@ -19,6 +19,7 @@ import {CodenvyResourceLimits} from '../../../components/api/codenvy-resource-li
 import {CodenvyPermissions} from '../../../components/api/codenvy-permissions.factory';
 import {CodenvyUser} from '../../../components/api/codenvy-user.factory';
 import {CodenvyTeamEventsManager} from '../../../components/api/codenvy-team-events-manager.factory';
+import {TeamDetailsService} from './team-details.service';
 
 enum Tab {Settings, Members, Workspaces}
 
@@ -85,10 +86,6 @@ export class TeamDetailsController {
    */
   private newName: string;
   /**
-   * If <code>true</code> - team with pointed name doesn't exist or cannot be accessed.
-   */
-  private invalidTeam: boolean;
-  /**
    * Index of the selected tab.
    */
   private selectedTabIndex: number;
@@ -112,8 +109,9 @@ export class TeamDetailsController {
    * @ngInject for Dependency injection
    */
   constructor(codenvyTeam: CodenvyTeam, codenvyResourcesDistribution: CodenvyResourcesDistribution, codenvyPermissions: CodenvyPermissions,
-              codenvyUser: CodenvyUser, $route: ng.route.IRouteService, $location: ng.ILocationService, $rootScope: che.IRootScopeService, $scope: ng.IScope,
-              confirmDialogService: any, codenvyTeamEventsManager: CodenvyTeamEventsManager, cheNotification: any, lodash: any) {
+              codenvyUser: CodenvyUser, $route: ng.route.IRouteService, $location: ng.ILocationService, $rootScope: che.IRootScopeService,
+              $scope: ng.IScope, confirmDialogService: any, codenvyTeamEventsManager: CodenvyTeamEventsManager, cheNotification: any,
+              lodash: any, teamDetailsService: TeamDetailsService) {
     this.codenvyTeam = codenvyTeam;
     this.codenvyResourcesDistribution = codenvyResourcesDistribution;
     this.codenvyPermissions = codenvyPermissions;
@@ -169,50 +167,24 @@ export class TeamDetailsController {
       this.codenvyTeamEventsManager.removeDeleteHandler(deleteHandler);
     });
 
-    this.fetchTeamDetails();
-    this.fetchUser();
-  }
-
-  /**
-   * Fetches the team's details by it's name.
-   */
-  fetchTeamDetails(): void {
-    this.team  = this.codenvyTeam.getTeamByName(this.teamName);
-
-    if (!this.team) {
-      this.codenvyTeam.fetchTeamByName(this.teamName).then((team: any) => {
-        this.team = team;
-        this.newName = angular.copy(this.team.name);
+    this.team = teamDetailsService.getTeam();
+    this.owner = teamDetailsService.getOwner();
+    if (this.team) {
+      this.newName = angular.copy(this.team.name);
+      if (this.owner) {
         this.fetchLimits();
         this.fetchUserPermissions();
-      }, (error: any) => {
-        this.invalidTeam = true;
-      });
-    } else {
-      this.newName = angular.copy(this.team.name);
-      this.fetchLimits();
-      this.fetchUserPermissions();
-    }
-  }
-
-  /**
-   * Fetch user by name (the name is the same as accounts).
-   */
-  fetchUser(): void {
-    if (!this.teamName) {
-      return;
-    }
-
-    let parts = this.teamName.split('/');
-    let accountName = (parts && parts.length > 0) ? parts[0] : '';
-
-    this.codenvyUser.fetchUserByName(accountName).then(() => {
-      this.owner = this.codenvyUser.getUserByName(accountName);
-    }, (error: any) => {
-      if (error.status === 304) {
-        this.owner = this.codenvyUser.getUserByName(accountName);
+      } else {
+        teamDetailsService.fetchOwnerByTeamName(this.teamName).then((owner: any) => {
+          this.owner = owner;
+        }, (error: any) => {
+          cheNotification.showError(error && error.data && error.data.message !== null ? error.data.message : 'Failed to find team owner.');
+        }).finally(() => {
+          this.fetchLimits();
+          this.fetchUserPermissions();
+        });
       }
-    });
+    }
   }
 
   /**
@@ -323,7 +295,7 @@ export class TeamDetailsController {
   updateTeamName(): void {
     if (this.newName && this.team && this.newName !== this.team.name) {
       this.team.name = this.newName;
-      this.codenvyTeam.updateTeam(this.team).then((team) => {
+      this.codenvyTeam.updateTeam(this.team).then((team: any) => {
         this.codenvyTeam.fetchTeams().then(() => {
           this.$location.path('/team/' + team.qualifiedName);
         });
@@ -341,10 +313,6 @@ export class TeamDetailsController {
     if (!this.team || !this.limits || angular.equals(this.limits, this.limitsCopy)) {
       return;
     }
-
-    let ramLimit = this.codenvyResourcesDistribution.getTeamResourceByType(this.team.id, CodenvyResourceLimits.RAM);
-    let workspaceLimit = this.codenvyResourcesDistribution.getTeamResourceByType(this.team.id, CodenvyResourceLimits.WORKSPACE);
-    let runtimeLimit = this.codenvyResourcesDistribution.getTeamResourceByType(this.team.id, CodenvyResourceLimits.RUNTIME);
 
     let resources = this.codenvyResourcesDistribution.getTeamResources(this.team.id);
 
