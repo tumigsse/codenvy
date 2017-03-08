@@ -1,10 +1,17 @@
 # Change Log
 
-## [5.4.0](https://github.com/codenvy/codenvy/tree/5.4.0) (2017-02-28)
+## [5.4.1](https://github.com/codenvy/codenvy/tree/5.4.1) (2017-04-06)
+[Full Changelog](https://github.com/codenvy/codenvy/compare/5.4.0...5.4.1)
+
+**Pull requests merged:**
+- Added "Get More RAM" widget on dashboard page, display idle timeout value on button's caption. [1884](https://github.com/codenvy/codenvy/pull/1884)
+- Fixed providing resources for suborganizations [1876](https://github.com/codenvy/codenvy/pull/1876)
+- Optimizes Fair Source license checks to improve performance. [1863](https://github.com/codenvy/codenvy/pull/1863)
+
+## [5.4.0](https://github.com/codenvy/codenvy/tree/5.4.0) (2017-04-01)
 [Full Changelog](https://github.com/codenvy/codenvy/compare/5.3.1...5.4.0)
 
 **Pull requests merged:**
-The follow are changelogs for codenvy/codenvy:
 The follow are changelogs for codenvy/codenvy:
 - Fix error messages when account doesn't have enough resources to perform operation [1870](https://github.com/codenvy/codenvy/pull/1870)
 - Remove duplicate entries in no_proxy because it may cause issues [1857](https://github.com/codenvy/codenvy/pull/1857)
