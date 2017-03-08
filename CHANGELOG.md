@@ -1,6 +1,6 @@
 # Change Log
 
-## [5.4.1](https://github.com/codenvy/codenvy/tree/5.4.1) (2017-04-06)
+## [5.4.1](https://github.com/codenvy/codenvy/tree/5.4.1) (2017-03-06)
 [Full Changelog](https://github.com/codenvy/codenvy/compare/5.4.0...5.4.1)
 
 **Pull requests merged:**
@@ -8,7 +8,7 @@
 - Fixed providing resources for suborganizations [1876](https://github.com/codenvy/codenvy/pull/1876)
 - Optimizes Fair Source license checks to improve performance. [1863](https://github.com/codenvy/codenvy/pull/1863)
 
-## [5.4.0](https://github.com/codenvy/codenvy/tree/5.4.0) (2017-04-01)
+## [5.4.0](https://github.com/codenvy/codenvy/tree/5.4.0) (2017-03-01)
 [Full Changelog](https://github.com/codenvy/codenvy/compare/5.3.1...5.4.0)
 
 **Pull requests merged:**
