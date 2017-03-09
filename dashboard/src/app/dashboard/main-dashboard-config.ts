@@ -14,28 +14,25 @@
  */
 'use strict';
 
-/**
- * @ngdoc directive
- * @name teams.owners:ListTeamMembers
- * @restrict E
- * @element
- *
- * @description
- * `<list-team-owners></list-team-owners>` for displaying list of owners
- *
- * @usage
- *   <list-team-owners></list-team-owners>
- *
- * @author Ann Shumilova
- */
-export class ListTeamOwners implements ng.IDirective {
+import {MainDashboardController} from './main-dashboard.controller';
 
-  restrict: string = 'E';
-  templateUrl: string = 'app/teams/team-details/team-owners/list-team-owners.html';
+export class MainDashboardConfig {
 
-  controller: string = 'ListTeamOwnersController';
-  controllerAs: string = 'listTeamOwnersController';
-  bindToController: boolean = true;
+  constructor(register) {
+    // controller
+    register.controller('MainDashboardController', MainDashboardController);
 
-  scope: any = {};
+    // config routes
+    register.app.config(($routeProvider) => {
+      $routeProvider.accessWhen('/', {
+        title: 'Dashboard',
+        templateUrl: 'app/dashboard/main-dashboard.html',
+        controller: 'MainDashboardController',
+        controllerAs: 'mainDashboardController'
+      });
+    })
+    ;
+  }
 }
+
+

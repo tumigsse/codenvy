@@ -17,7 +17,7 @@
     from Codenvy S.A..
 
 -->
-<che-toolbar che-title="{{teamDetailsController.teamName}}" ng-if="!teamDetailsController.invalidTeam">
+<che-toolbar che-title="{{teamDetailsController.teamName}}" ng-if="teamDetailsController.team">
   <div class="save-button-placeholder">
     <che-button-save-flat ng-show="teamDetailsController.isSaveButtonVisible()"
                           ng-disabled="teamDetailsController.isSaveButtonDisabled()"
@@ -25,7 +25,7 @@
                           ng-click="teamDetailsController.updateTeam()"></che-button-save-flat>
   </div>
 </che-toolbar>
-<md-content md-scroll-y flex md-theme="default" ng-if="!teamDetailsController.invalidTeam">
+<md-content md-scroll-y flex md-theme="default" ng-if="teamDetailsController.team">
   <md-tabs md-dynamic-height md-stretch-tabs="auto"
            md-selected="teamDetailsController.selectedTabIndex"
            md-center-tabs="">
@@ -40,7 +40,7 @@
         <div class="team-details-progress">
           <md-progress-linear md-mode="indeterminate" ng-show="teamDetailsController.isLoading"></md-progress-linear>
         </div>
-        <div flex layout="column"class="team-details-content">
+        <div flex layout="column" class="team-details-content">
           <ng-form name="teamDetailsController.teamForm">
             <!-- Name -->
           <che-label-container che-label-name="Name">
@@ -66,7 +66,7 @@
           </che-label-container>
           <!-- Owner -->
           <che-label-container che-label-name="Owners" che-label-description="Owners can set permissions and share resources.">
-            <list-team-owners ng-if="teamDetailsController.owner" owner="teamDetailsController.owner"></list-team-owners>
+            <list-team-owners ng-if="teamDetailsController.owner"></list-team-owners>
           </che-label-container>
 
           <!-- Workspace cap -->
@@ -128,16 +128,14 @@
     </md-tab>
 
     <!-- Developers Tab -->
-    <md-tab md-on-select="developersPageSelected=true" md-on-deselect="developersPageSelected=false">
+    <md-tab>
       <md-tab-label>
         <md-icon md-font-icon="fa-group" class="fa che-tab-label-icon"></md-icon>
         <span class="che-tab-label-title">Members</span>
       </md-tab-label>
       <md-tab-body>
-        <list-team-members ng-if="teamDetailsController.team && teamDetailsController.owner && developersPageSelected"
-                           team="teamDetailsController.team"
-                           owner="teamDetailsController.owner"
-                           editable="teamDetailsController.isUserAllowedTo('setPermissions')"></list-team-members>
+        <list-team-members  ng-if="teamDetailsController.owner"
+                            editable="teamDetailsController.isUserAllowedTo('setPermissions')"></list-team-members>
       </md-tab-body>
     </md-tab>
 
@@ -162,19 +160,19 @@
     </md-tab>-->
 
     <!-- Workspaces Tab -->
-    <md-tab md-on-select="workspacesPageSelected=true" md-on-deselect="workspacesPageSelected=false">
+    <md-tab>
       <md-tab-label>
         <md-icon md-font-icon="chefont cheico-workspace" class="che-tab-label-icon"></md-icon>
         <span class="che-tab-label-title">Workspaces</span>
       </md-tab-label>
       <md-tab-body>
-        <list-team-workspaces team="teamDetailsController.team" ng-if="teamDetailsController.team && workspacesPageSelected"></list-team-workspaces>
+        <list-team-workspaces></list-team-workspaces>
       </md-tab-body>
     </md-tab>
 
   </md-tabs>
 </md-content>
-<md-content ng-if="teamDetailsController.invalidTeam" flex class="team-error-content" layout="column" layout-align="center center">
+<md-content ng-if="!teamDetailsController.team" flex class="team-error-content" layout="column" layout-align="center center">
   <div class="error-title">Team <b>{{teamDetailsController.teamName}}</b> not found.</div>
   <span class="fa fa-group error-image"></span>
   <div class="error-description">

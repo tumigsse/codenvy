@@ -15,7 +15,8 @@
 'use strict';
 import {CodenvyTeam} from '../../../../components/api/codenvy-team.factory';
 import {CodenvyPermissions} from '../../../../components/api/codenvy-permissions.factory';
-import {CodenvyUser} from "../../../../components/api/codenvy-user.factory";
+import {CodenvyUser} from '../../../../components/api/codenvy-user.factory';
+import {TeamDetailsService} from '../team-details.service';
 /**
  * @ngdoc controller
  * @name teams.workspaces:ListTeamWorkspacesController
@@ -48,7 +49,7 @@ export class ListTeamWorkspacesController {
    * Service for displaying dialogs.
    */
   private $mdDialog: angular.material.IDialogService;
-   /**
+  /**
    * Promises service.
    */
   private $q: ng.IQService;
@@ -92,7 +93,8 @@ export class ListTeamWorkspacesController {
    * @ngInject for Dependency injection
    */
   constructor(codenvyTeam: CodenvyTeam, codenvyPermissions: CodenvyPermissions, codenvyUser: CodenvyUser, cheWorkspace: any,
-              cheNotification: any, lodash: _.LoDashStatic, $mdDialog: angular.material.IDialogService, $q: ng.IQService) {
+              cheNotification: any, lodash: _.LoDashStatic, $mdDialog: angular.material.IDialogService, $q: ng.IQService,
+              teamDetailsService: TeamDetailsService) {
     this.codenvyTeam = codenvyTeam;
     this.cheWorkspace = cheWorkspace;
     this.cheNotification = cheNotification;
@@ -110,10 +112,15 @@ export class ListTeamWorkspacesController {
     this.isBulkChecked = false;
     this.isNoSelected = true;
 
+    this.team = teamDetailsService.getTeam();
+
     this.fetchPermissions();
   }
 
   fetchPermissions(): void {
+    if (!this.team) {
+      return;
+    }
     this.codenvyPermissions.fetchTeamPermissions(this.team.id).then(() => {
       this.processPermissions();
     }, (error: any) => {
@@ -238,7 +245,7 @@ export class ListTeamWorkspacesController {
     this.isNoSelected = true;
     this.isAllSelected = true;
 
-    Object.keys(this.workspacesSelectedStatus).forEach((key) => {
+    Object.keys(this.workspacesSelectedStatus).forEach((key: string) => {
       if (this.workspacesSelectedStatus[key]) {
         this.isNoSelected = false;
       } else {
@@ -268,7 +275,7 @@ export class ListTeamWorkspacesController {
       return;
     }
 
-    workspacesSelectedStatusKeys.forEach((key) => {
+    workspacesSelectedStatusKeys.forEach((key: string) => {
       if (this.workspacesSelectedStatus[key] === true) {
         checkedWorkspacesKeys.push(key);
       }
