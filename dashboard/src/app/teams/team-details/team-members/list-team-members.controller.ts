@@ -15,7 +15,6 @@
 'use strict';
 import {CodenvyTeam} from '../../../../components/api/codenvy-team.factory';
 import {CodenvyPermissions} from '../../../../components/api/codenvy-permissions.factory';
-import {CodenvyUser} from '../../../../components/api/codenvy-user.factory';
 import {TeamDetailsService} from '../team-details.service';
 
 /**
@@ -37,7 +36,7 @@ export class ListTeamMembersController {
   /**
    * User API interaction.
    */
-  private codenvyUser: CodenvyUser;
+  private cheUser: any;
   /**
    * User profile API interaction.
    */
@@ -107,13 +106,13 @@ export class ListTeamMembersController {
    * Default constructor that is using resource
    * @ngInject for Dependency injection
    */
-  constructor(codenvyTeam: CodenvyTeam, codenvyPermissions: CodenvyPermissions, codenvyUser: CodenvyUser, cheProfile: any,
+  constructor(codenvyTeam: CodenvyTeam, codenvyPermissions: CodenvyPermissions, cheUser: any, cheProfile: any,
               confirmDialogService: any, $mdDialog: angular.material.IDialogService, $q: ng.IQService, cheNotification: any,
               lodash: _.LoDashStatic, $location: ng.ILocationService, teamDetailsService: TeamDetailsService) {
     this.codenvyTeam = codenvyTeam;
     this.codenvyPermissions = codenvyPermissions;
     this.cheProfile = cheProfile;
-    this.codenvyUser = codenvyUser;
+    this.cheUser = cheUser;
     this.$mdDialog = $mdDialog;
     this.$q = $q;
     this.$location = $location;
@@ -411,7 +410,7 @@ export class ListTeamMembersController {
       for (let i = 0; i < checkedKeys.length; i++) {
         let id = checkedKeys[i];
         this.membersSelectedStatus[id] = false;
-        if (id === this.codenvyUser.getUser().id) {
+        if (id === this.cheUser.getUser().id) {
           currentUserPromise = this.codenvyPermissions.removeTeamPermissions(this.team.id, id);
           continue;
         }
@@ -459,7 +458,7 @@ export class ListTeamMembersController {
   removePermissions(user: any) {
     this.isLoading = true;
     this.codenvyPermissions.removeTeamPermissions(user.permissions.instanceId, user.userId).then(() => {
-      if (user.userId === this.codenvyUser.getUser().id) {
+      if (user.userId === this.cheUser.getUser().id) {
         this.processCurrentUserRemoval();
       } else {
         this.fetchMembers();

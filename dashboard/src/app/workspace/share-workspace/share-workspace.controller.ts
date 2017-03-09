@@ -30,11 +30,11 @@ export class ShareWorkspaceController {
    * Default constructor that is using resource
    * @ngInject for Dependency injection
    */
-  constructor(cheWorkspace, codenvyUser, codenvyPermissions, cheNotification, $mdDialog, $document, $mdConstant, $route, $q, lodash, confirmDialogService: any) {
+  constructor(cheWorkspace, cheUser, codenvyPermissions, cheNotification, $mdDialog, $document, $mdConstant, $route, $q, lodash, confirmDialogService: any) {
     "ngInject";
 
     this.cheWorkspace = cheWorkspace;
-    this.codenvyUser = codenvyUser;
+    this.cheUser = cheUser;
     this.codenvyPermissions = codenvyPermissions;
     this.cheNotification = cheNotification;
     this.$mdDialog = $mdDialog;
@@ -119,12 +119,12 @@ export class ShareWorkspaceController {
 
     permissions.forEach((permission) => {
       let userId = permission.userId;
-      let user = this.codenvyUser.getUserFromId(userId);
+      let user = this.cheUser.getUserFromId(userId);
       if (user) {
         this.formUserItem(user, permission);
       } else {
-        this.codenvyUser.fetchUserId(userId).then(() => {
-          this.formUserItem(this.codenvyUser.getUserFromId(userId), permission);
+        this.cheUser.fetchUserId(userId).then(() => {
+          this.formUserItem(this.cheUser.getUserFromId(userId), permission);
         });
       }
     });
@@ -369,14 +369,14 @@ export class ShareWorkspaceController {
     }
 
     //Displays user name instead of email
-    if (this.codenvyUser.getUserByAlias(email)) {
-      let user = this.codenvyUser.getUserByAlias(email);
+    if (this.cheUser.getUserByAlias(email)) {
+      let user = this.cheUser.getUserByAlias(email);
       this.existingUsers.set(email, user);
       return email;
     }
 
-    let findUser = this.codenvyUser.fetchUserByAlias(email).then(() => {
-      let user = this.codenvyUser.getUserByAlias(email);
+    let findUser = this.cheUser.fetchUserByAlias(email).then(() => {
+      let user = this.cheUser.getUserByAlias(email);
       this.existingUsers.set(email, user);
     }, (error) => {
       this.notExistingUsers.push(email);
@@ -405,7 +405,7 @@ export class ShareWorkspaceController {
    * @returns {user.name|*} user's name
    */
   getUserName(email) {
-    let user = this.codenvyUser.getUserByAlias(email);
+    let user = this.cheUser.getUserByAlias(email);
     return user ? user.name : email;
   }
 
@@ -416,7 +416,7 @@ export class ShareWorkspaceController {
    * @returns {boolean}
    */
   isUserExists(email) {
-    return (this.codenvyUser.getUserByAlias(email) !== undefined);
+    return (this.cheUser.getUserByAlias(email) !== undefined);
   }
 
 }

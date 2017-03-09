@@ -14,10 +14,6 @@
  */
 'use strict';
 
-
-import {CodenvyUserBuilder} from './codenvy-user-builder';
-import {CodenvyFactoryBuilder} from './codenvy-factory-builder';
-
 /**
  * This class is providing the entry point for accessing the builders
  * @author Florent Benoit
@@ -30,21 +26,5 @@ export class CodenvyAPIBuilder {
    * @ngInject for Dependency injection
    */
   constructor () {
-  }
-
-  /***
-   * The Codenvy User builder
-   * @returns {CodenvyUserBuilder}
-   */
-  getUserBuilder() {
-    return new CodenvyUserBuilder();
-  }
-
-  /***
-   * The Codenvy Factory builder
-   * @returns {CodenvyFactoryBuilder}
-   */
-  getFactoryBuilder() {
-    return new CodenvyFactoryBuilder();
   }
 }
