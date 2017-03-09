@@ -32,6 +32,7 @@ enum Tab {Summary, Card, Invoices}
  * @author Ann Shumilova
  */
 export class BillingController {
+  $location: ng.ILocationService;
   $log: ng.ILogService;
   $mdDialog: ng.material.IDialogService;
   $q: ng.IQService;
@@ -54,9 +55,10 @@ export class BillingController {
   /**
    * @ngInject for Dependency injection
    */
-  constructor ($log: ng.ILogService, $mdDialog: ng.material.IDialogService, $q: ng.IQService,
-               $rootScope: che.IRootScopeService, confirmDialogService: any, cheAPI: any, codenvyPayment: CodenvyPayment,
-               codenvyTeam: CodenvyTeam,cheNotification: any, billingService: BillingService) {
+  constructor ($location: ng.ILocationService, $log: ng.ILogService, $mdDialog: ng.material.IDialogService, $q: ng.IQService,
+               $rootScope: che.IRootScopeService, $scope: ng.IScope, confirmDialogService: any, cheAPI: any,
+               codenvyPayment: CodenvyPayment, codenvyTeam: CodenvyTeam,cheNotification: any, billingService: BillingService) {
+    this.$location = $location;
     this.$log = $log;
     this.$mdDialog = $mdDialog;
     this.$q = $q;
@@ -71,7 +73,8 @@ export class BillingController {
 
     this.accountId = '';
 
-    this.selectedTabIndex = Tab.Summary;
+    let tabIndex = parseInt(Tab[this.$location.search().tab], 10);
+    this.selectedTabIndex = tabIndex ? tabIndex : Tab.Summary;
 
     this.fetchCreditCard();
   }
@@ -233,6 +236,20 @@ export class BillingController {
       },
       templateUrl: 'app/billing/error-popup/error-popup.html'
     });
+  }
+
+  /**
+   * Changes search part of URL.
+   * Updates credit card when Card info tab is selected.
+   *
+   * @param {number} tabIndex tab ID
+   */
+  onSelectTab(tabIndex: number): void {
+    this.$location.search('tab', Tab[tabIndex]);
+
+    if (tabIndex === Tab.Card) {
+      this.getCreditCard();
+    }
   }
 
 }
