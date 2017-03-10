@@ -40,7 +40,7 @@ public class GitlabSourceStorageBuilder {
      */
     public SourceStorageDto build(GitlabUrl gitlabUrl) {
         // Create map for source storage dto
-        Map<String, String> parameters = new HashMap<>(2);
+        Map<String, String> parameters = new HashMap<>();
         parameters.put("branch", gitlabUrl.branch());
 
         if (!Strings.isNullOrEmpty(gitlabUrl.subfolder())) {

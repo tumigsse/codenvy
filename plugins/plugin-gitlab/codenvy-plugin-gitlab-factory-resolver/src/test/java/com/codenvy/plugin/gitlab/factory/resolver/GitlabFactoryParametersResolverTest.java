@@ -15,14 +15,13 @@
 package com.codenvy.plugin.gitlab.factory.resolver;
 
 
-import com.codenvy.plugin.urlfactory.CreateFactoryParams;
-import com.codenvy.plugin.urlfactory.ProjectConfigDtoMerger;
-import com.codenvy.plugin.urlfactory.URLFactoryBuilder;
-
 import org.eclipse.che.api.core.BadRequestException;
 import org.eclipse.che.api.factory.shared.dto.FactoryDto;
 import org.eclipse.che.api.workspace.shared.dto.ProjectConfigDto;
 import org.eclipse.che.api.workspace.shared.dto.SourceStorageDto;
+import org.eclipse.che.plugin.urlfactory.CreateFactoryParams;
+import org.eclipse.che.plugin.urlfactory.ProjectConfigDtoMerger;
+import org.eclipse.che.plugin.urlfactory.URLFactoryBuilder;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;

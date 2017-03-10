@@ -642,11 +642,6 @@
             </dependency>
             <dependency>
                 <groupId>com.codenvy.plugin</groupId>
-                <artifactId>codenvy-plugin-url-factory</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.codenvy.plugin</groupId>
                 <artifactId>codenvy-plugin-webhooks-base</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -821,6 +816,11 @@
             <dependency>
                 <groupId>org.eclipse.che.plugin</groupId>
                 <artifactId>che-plugin-docker-compose</artifactId>
+                <version>${che.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.che.plugin</groupId>
+                <artifactId>che-plugin-url-factory</artifactId>
                 <version>${che.version}</version>
             </dependency>
             <dependency>
