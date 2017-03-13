@@ -346,6 +346,16 @@
             </dependency>
             <dependency>
                 <groupId>com.codenvy.onpremises.wsmaster</groupId>
+                <artifactId>codenvy-hosted-api-system-license-filters</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.codenvy.onpremises.wsmaster</groupId>
+                <artifactId>codenvy-hosted-api-system-license-shared</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.codenvy.onpremises.wsmaster</groupId>
                 <artifactId>codenvy-hosted-api-workspace</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -752,14 +762,14 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.che</groupId>
-                <artifactId>exec-agent</artifactId>
+                <artifactId>go-agents</artifactId>
                 <version>${che.version}</version>
                 <type>zip</type>
                 <classifier>linux_amd64</classifier>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.che</groupId>
-                <artifactId>exec-agent</artifactId>
+                <artifactId>go-agents</artifactId>
                 <version>${che.version}</version>
                 <type>zip</type>
                 <classifier>linux_arm7</classifier>

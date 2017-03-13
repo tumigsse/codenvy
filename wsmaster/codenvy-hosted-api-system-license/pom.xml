@@ -31,7 +31,7 @@
     <dependencies>
         <dependency>
             <groupId>com.codenvy.onpremises.wsmaster</groupId>
-            <artifactId>codenvy-hosted-sso-client</artifactId>
+            <artifactId>codenvy-hosted-api-system-license-shared</artifactId>
         </dependency>
         <dependency>
             <groupId>com.codenvy.plugin</groupId>
@@ -124,11 +124,6 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse.che.core</groupId>
             <artifactId>che-core-db</artifactId>
             <scope>provided</scope>
@@ -182,12 +177,6 @@
             <groupId>org.everrest</groupId>
             <artifactId>everrest-assured</artifactId>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>commons-logging</artifactId>
-                    <groupId>commons-logging</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -292,7 +281,7 @@
                 <dependencies>
                     <dependency>
                         <groupId>com.codenvy.onpremises.wsmaster</groupId>
-                        <artifactId>codenvy-hosted-api-system-license</artifactId>
+                        <artifactId>codenvy-hosted-api-system-license-shared</artifactId>
                         <version>${project.version}</version>
                     </dependency>
                 </dependencies>

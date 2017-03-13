@@ -30,7 +30,7 @@ import static org.testng.Assert.assertNotNull;
  * @author Florent Benoit
  */
 @Listeners(MockitoTestNGListener.class)
-public class OGitlabUrlTest {
+public class GitlabUrlTest {
 
     /**
      * Parser used to create the url.
