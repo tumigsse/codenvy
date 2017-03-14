@@ -387,7 +387,7 @@ export class ListTeamMembersController {
     let checkedKeys = [];
 
     if (!membersSelectedStatusKeys.length) {
-      this.cheNotification.showError('No such developers.');
+      this.cheNotification.showError('No such members.');
       return;
     }
 
@@ -398,7 +398,7 @@ export class ListTeamMembersController {
     });
 
     if (!checkedKeys.length) {
-      this.cheNotification.showError('No such developers.');
+      this.cheNotification.showError('No such members.');
       return;
     }
 

@@ -103,6 +103,8 @@ export class TeamDetailsController {
 
   private teamForm: ng.IFormController;
 
+  private hasTeamAccess: boolean;
+
   /**
    * Default constructor that is using resource injection
    * @ngInject for Dependency injection
@@ -166,20 +168,23 @@ export class TeamDetailsController {
       this.codenvyTeamEventsManager.removeDeleteHandler(deleteHandler);
     });
 
+    this.isLoading = true;
+    this.hasTeamAccess = true;
+
     this.team = teamDetailsService.getTeam();
     this.owner = teamDetailsService.getOwner();
+
     if (this.team) {
       this.newName = angular.copy(this.team.name);
       if (this.owner) {
-        this.fetchLimits();
         this.fetchUserPermissions();
       } else {
         teamDetailsService.fetchOwnerByTeamName(this.teamName).then((owner: any) => {
           this.owner = owner;
         }, (error: any) => {
+          this.isLoading = false;
           cheNotification.showError(error && error.data && error.data.message !== null ? error.data.message : 'Failed to find team owner.');
         }).finally(() => {
-          this.fetchLimits();
           this.fetchUserPermissions();
         });
       }
@@ -192,11 +197,17 @@ export class TeamDetailsController {
   fetchUserPermissions(): void {
     this.codenvyPermissions.fetchTeamPermissions(this.team.id).then(() => {
       this.allowedUserActions = this.processUserPermissions();
+      this.fetchLimits();
     }, (error: any) => {
       this.isLoading = false;
       if (error.status === 304) {
         this.allowedUserActions = this.processUserPermissions();
+        this.fetchLimits();
+      } else if (error.status === 403) {
+        this.allowedUserActions = [];
+        this.hasTeamAccess = false;
       }
+      this.isLoading = false;
     });
   }
 
@@ -317,22 +328,30 @@ export class TeamDetailsController {
 
     resources = angular.copy(resources);
 
-    if (this.limits.ramCap) {
+    let resourcesToRemove = [CodenvyResourceLimits.TIMEOUT];
+
+    if (this.limits.ramCap !== null && this.limits.ramCap !== undefined) {
       resources = this.codenvyResourcesDistribution.setTeamResourceLimitByType(resources, CodenvyResourceLimits.RAM, (this.limits.ramCap * 1024));
+    } else {
+      resourcesToRemove.push(CodenvyResourceLimits.RAM);
     }
 
-    if (this.limits.workspaceCap) {
+    if (this.limits.workspaceCap !== null && this.limits.workspaceCap !== undefined) {
       resources = this.codenvyResourcesDistribution.setTeamResourceLimitByType(resources, CodenvyResourceLimits.WORKSPACE, this.limits.workspaceCap);
+    } else {
+      resourcesToRemove.push(CodenvyResourceLimits.WORKSPACE);
     }
 
-    if (this.limits.runtimeCap) {
+    if (this.limits.runtimeCap !== null && this.limits.runtimeCap !== undefined) {
       resources = this.codenvyResourcesDistribution.setTeamResourceLimitByType(resources, CodenvyResourceLimits.RUNTIME, this.limits.runtimeCap);
+    } else {
+      resourcesToRemove.push(CodenvyResourceLimits.RUNTIME);
     }
 
     // if the timeout resource will be send in this case - it will set the timeout for the current team, and the updating timeout of
     // parent team will not affect the current team, so to avoid this - remove timeout resource if present:
     this.lodash.remove(resources, (resource: any) => {
-      return resource.type === CodenvyResourceLimits.TIMEOUT;
+      return resourcesToRemove.indexOf(resource.type) >= 0;
     });
 
 
