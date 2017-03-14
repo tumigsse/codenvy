@@ -22,6 +22,16 @@ define(["jquery","underscore","views/accountformbase","models/account"],
 
         var ForgotPasswordForm = AccountFormBase.extend({
             initialize : function(attributes){
+                var self = this;
+                Account.getBrandingInfo()
+                .done(function(Branding){
+                    try{
+                        document.title = Branding.title + ' | ' + document.title;
+                    }catch(err){
+                        window.console.error('Branding error. Missing title in product.json');
+                    }
+                    self._setSupportLink(Branding.supportLink);
+                });
                 AccountFormBase.prototype.initialize.apply(this,attributes);
                 Account.getUserSettings() //get user props
                 .then(function(settings){
@@ -31,6 +41,10 @@ define(["jquery","underscore","views/accountformbase","models/account"],
                     }
                })
                 .fail();
+            },
+
+            _setSupportLink : function(link){
+                $('.support-link')[0].setAttribute('href', link);
             },
 
             __submit : function(){

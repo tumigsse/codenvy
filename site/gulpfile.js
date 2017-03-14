@@ -117,6 +117,7 @@ gulp.task('copy_stage',['copy_src','stage_cfg','css_stage','jekyll_stage'], func
     paths.prod+'**/*.ico',
     paths.stage+'**/*.png',
     paths.stage+'**/*.svg',
+    paths.stage+'**/*.json',
     paths.stage+'**/*.woff',
     paths.stage+'**/*.woff2',
     paths.stage+'**/*.ttf',

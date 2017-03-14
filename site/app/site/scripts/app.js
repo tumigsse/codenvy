@@ -25,7 +25,20 @@ define(["jquery","config",
         "views/factory-usage-notification",
         "views/login",
         "views/accept-fair-source-license",
-        "views/fair-source-license-is-not-accepted-error"
+        "views/fair-source-license-is-not-accepted-error",
+        "views/maintenance",
+        "views/errors/error_400",
+        "views/errors/error_401",
+        "views/errors/error_403",
+        "views/errors/error_404",
+        "views/errors/error_405",
+        "views/errors/error_500",
+        "views/errors/error_503",
+        "views/errors/error_504",
+        "views/errors/browser-not-supported",
+        "views/errors/error-cookies-disabled",
+        "views/errors/error-factory-creation",
+        "views/errors/error-tenant-name"
         ],
 
     function($,Config,
@@ -37,7 +50,20 @@ define(["jquery","config",
         FactoryUsageNotification,
         MainPage,
         AcceptLicensePage,
-        FSLNotAcceptedErrorPage){
+        FSLNotAcceptedErrorPage,
+        Maintenance,
+        Error400,
+        Error401,
+        Error403,
+        Error404,
+        Error405,
+        Error500,
+        Error503,
+        Error504,
+        BrowserNotSupported,
+        YourCookiesAreDisabled,
+        FactoryWorkspaceCreationFailed,
+        WorkspaceDoesNotExist){
 
         function modernize(){
             Modernizr.load({
@@ -68,7 +94,111 @@ define(["jquery","config",
                         factoryUsageNotification =  $(".factory-notification"),
                         mainpage = $(".main-page"),
                         acceptLicensePage = $(".accept-license-form"),
-                        fslNotAcceptedPage = $(".fair-source-license-is-not-accepted-error");
+                        fslNotAcceptedPage = $(".fair-source-license-is-not-accepted-error"),
+                        maintenance = $(".maintenance"),
+                        error400 = $(".400"),
+                        error401 = $(".401"),
+                        error403 = $(".403"),
+                        error404 = $(".404"),
+                        error405 = $(".405"),
+                        error500 = $(".500"),
+                        error503 = $(".503"),
+                        error504 = $(".504"),
+                        browserNotSupported = $(".browser-not-supported"),
+                        yourCookiesAreDisabled = $(".error-cookies-disabled"),
+                        factoryWorkspaceCreationFailed = $(".error-factory-creation"),
+                        workspaceDoesNotExist = $(".error-tenant-name");
+
+                    if(maintenance.length !== 0){
+                        (function(){
+                            Maintenance.get(maintenance);
+                        }());
+
+                    }
+
+                    if(error400.length !== 0){
+                        (function(){
+                            Error400.get(error400);
+                        }());
+
+                    }
+
+                    if(error401.length !== 0){
+                        (function(){
+                            Error401.get(error401);
+                        }());
+
+                    }
+
+                    if(error403.length !== 0){
+                        (function(){
+                            Error403.get(error403);
+                        }());
+
+                    }
+
+                    if(error404.length !== 0){
+                        (function(){
+                            Error404.get(error404);
+                        }());
+
+                    }
+
+                    if(error405.length !== 0){
+                        (function(){
+                            Error405.get(error405);
+                        }());
+
+                    }
+
+                    if(error500.length !== 0){
+                        (function(){
+                            Error500.get(error500);
+                        }());
+
+                    }
+
+                    if(error503.length !== 0){
+                        (function(){
+                            Error503.get(error503);
+                        }());
+
+                    }
+
+                    if(error504.length !== 0){
+                        (function(){
+                            Error504.get(error504);
+                        }());
+
+                    }
+
+                    if(browserNotSupported.length !== 0){
+                        (function(){
+                            BrowserNotSupported.get(browserNotSupported);
+                        }());
+
+                    }
+
+                    if(yourCookiesAreDisabled.length !== 0){
+                        (function(){
+                            YourCookiesAreDisabled.get(yourCookiesAreDisabled);
+                        }());
+
+                    }
+
+                    if(factoryWorkspaceCreationFailed.length !== 0){
+                        (function(){
+                            FactoryWorkspaceCreationFailed.get(factoryWorkspaceCreationFailed);
+                        }());
+
+                    }
+
+                    if(workspaceDoesNotExist.length !== 0){
+                        (function(){
+                            WorkspaceDoesNotExist.get(workspaceDoesNotExist);
+                        }());
+
+                    }
 
                     if(fslNotAcceptedPage.length !== 0){
                         (function(){

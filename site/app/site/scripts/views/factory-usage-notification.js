@@ -22,6 +22,14 @@ define(["jquery", "backbone", "models/account","views/accountformbase","validati
         var FactoryNotification = Backbone.View.extend({
             
             initialize : function(){
+                Account.getBrandingInfo()
+                .done(function(Branding){
+                    try{
+                        document.title = Branding.title + ' | ' + document.title;
+                    }catch(err){
+                        window.console.error('Branding error. Missing title in product.json');
+                    }
+                });
                 var continueURL = decodeURI(Account.getQueryParameterByName('redirect_url'));
                 if (continueURL !== 'undefined') {
                     $("#continue")

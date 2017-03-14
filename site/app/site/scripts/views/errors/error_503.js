@@ -19,10 +19,10 @@
 define(["jquery", "models/account", "backbone"],
 
     function($, Account, Backbone){
-        var FSLnotAcceptedPage = Backbone.View.extend({
+        var Error503 = Backbone.View.extend({
 
         	initialize : function(){
-        		Account.logout();
+                var self = this;
                 Account.getBrandingInfo()
                 .done(function(Branding){
                     try{
@@ -40,8 +40,14 @@ define(["jquery", "models/account", "backbone"],
                     }catch(err){
                         window.console.error('Branding error. Missing error message for 503-error in product.json');
                     }
+                })
+                .then(function(){
+                    self._showHidden();
                 });
-        	}
+        	},
+            _showHidden : function(){
+                this.$el.removeClass('hidden');
+            }
         });
 
 
@@ -50,10 +56,10 @@ define(["jquery", "models/account", "backbone"],
                 if(typeof form === 'undefined'){
                     throw new Error("Need a form");
                 }
-                return new FSLnotAcceptedPage({el:form});
+                return new Error503({el:form});
             },
 
-            FSLnotAcceptedPage : FSLnotAcceptedPage
+            Error503 : Error503
         };
     }
 );

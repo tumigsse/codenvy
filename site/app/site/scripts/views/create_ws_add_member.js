@@ -22,6 +22,14 @@ define(["jquery","underscore", "backbone", "models/account","views/accountformba
         var CreateWsAddMember = Backbone.View.extend({
             
             initialize : function(){
+                Account.getBrandingInfo()
+                .done(function(Branding){
+                    try{
+                        document.title = Branding.title + ' | ' + document.title;
+                    }catch(err){
+                        window.console.error('Branding error. Missing title in product.json');
+                    }
+                });
                 var bearertoken = Account.getQueryParameterByName("bearertoken"),
                  redirect_url = Account.getQueryParameterByName("redirect_url");
                 if (bearertoken) {

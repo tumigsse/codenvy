@@ -16,32 +16,38 @@
  * from Codenvy S.A..
  */
  
-define(["jquery", "models/account", "backbone"],
+define(["jquery", "models/account", "backbone","views/form"],
 
-    function($, Account, Backbone){
-        var FSLnotAcceptedPage = Backbone.View.extend({
+    function($, Account, Backbone, Form){
+        var WorkspaceDoesNotExist = Form.extend({
 
         	initialize : function(){
-        		Account.logout();
+                var self = this;
                 Account.getBrandingInfo()
                 .done(function(Branding){
                     try{
-                        document.title = Branding.errorpage.error503.title;
+                        document.title = Branding.errorpage.WorkspaceDoesNotExist.title;
                     }catch(err){
                         window.console.error('Branding error. Missing title in product.json');
                     }
                     try{
-                        $('.header').html(Branding.errorpage.error503.header);
+                        $('.header').html(Branding.errorpage.WorkspaceDoesNotExist.header);
                     }catch(err){
-                        window.console.error('Branding error. Missing header for 503-error in product.json');
+                        window.console.error('Branding error. Missing header for WorkspaceDoesNotExist in product.json');
                     }
                     try{
-                        $('.message').html(Branding.errorpage.error503.message);
+                        $('.message').html(Branding.errorpage.WorkspaceDoesNotExist.message);
                     }catch(err){
-                        window.console.error('Branding error. Missing error message for 503-error in product.json');
+                        window.console.error('Branding error. Missing error message for WorkspaceDoesNotExist in product.json');
                     }
+                })
+                .then(function(){
+                    self._showHidden();
                 });
-        	}
+        	},
+            _showHidden : function(){
+                this.$el.removeClass('hidden');
+            }
         });
 
 
@@ -50,10 +56,10 @@ define(["jquery", "models/account", "backbone"],
                 if(typeof form === 'undefined'){
                     throw new Error("Need a form");
                 }
-                return new FSLnotAcceptedPage({el:form});
+                return new WorkspaceDoesNotExist({el:form});
             },
 
-            FSLnotAcceptedPage : FSLnotAcceptedPage
+            WorkspaceDoesNotExist : WorkspaceDoesNotExist
         };
     }
 );

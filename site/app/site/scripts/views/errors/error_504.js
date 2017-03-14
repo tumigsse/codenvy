@@ -19,29 +19,35 @@
 define(["jquery", "models/account", "backbone"],
 
     function($, Account, Backbone){
-        var FSLnotAcceptedPage = Backbone.View.extend({
+        var Error504 = Backbone.View.extend({
 
         	initialize : function(){
-        		Account.logout();
+                var self = this;
                 Account.getBrandingInfo()
                 .done(function(Branding){
                     try{
-                        document.title = Branding.errorpage.error503.title;
+                        document.title = Branding.errorpage.error504.title;
                     }catch(err){
                         window.console.error('Branding error. Missing title in product.json');
                     }
                     try{
-                        $('.header').html(Branding.errorpage.error503.header);
+                        $('.header').html(Branding.errorpage.error504.header);
                     }catch(err){
-                        window.console.error('Branding error. Missing header for 503-error in product.json');
+                        window.console.error('Branding error. Missing header for 504-error in product.json');
                     }
                     try{
-                        $('.message').html(Branding.errorpage.error503.message);
+                        $('.message').html(Branding.errorpage.error504.message);
                     }catch(err){
-                        window.console.error('Branding error. Missing error message for 503-error in product.json');
+                        window.console.error('Branding error. Missing error message for 504-error in product.json');
                     }
+                })
+                .then(function(){
+                    self._showHidden();
                 });
-        	}
+        	},
+            _showHidden : function(){
+                this.$el.removeClass('hidden');
+            }
         });
 
 
@@ -50,10 +56,10 @@ define(["jquery", "models/account", "backbone"],
                 if(typeof form === 'undefined'){
                     throw new Error("Need a form");
                 }
-                return new FSLnotAcceptedPage({el:form});
+                return new Error504({el:form});
             },
 
-            FSLnotAcceptedPage : FSLnotAcceptedPage
+            Error504 : Error504
         };
     }
 );
