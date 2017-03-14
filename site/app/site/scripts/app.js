@@ -27,18 +27,7 @@ define(["jquery","config",
         "views/accept-fair-source-license",
         "views/fair-source-license-is-not-accepted-error",
         "views/maintenance",
-        "views/errors/error_400",
-        "views/errors/error_401",
-        "views/errors/error_403",
-        "views/errors/error_404",
-        "views/errors/error_405",
-        "views/errors/error_500",
-        "views/errors/error_503",
-        "views/errors/error_504",
-        "views/errors/browser-not-supported",
-        "views/errors/error-cookies-disabled",
-        "views/errors/error-factory-creation",
-        "views/errors/error-tenant-name"
+        "views/errors/branding-pages"
         ],
 
     function($,Config,
@@ -52,18 +41,7 @@ define(["jquery","config",
         AcceptLicensePage,
         FSLNotAcceptedErrorPage,
         Maintenance,
-        Error400,
-        Error401,
-        Error403,
-        Error404,
-        Error405,
-        Error500,
-        Error503,
-        Error504,
-        BrowserNotSupported,
-        YourCookiesAreDisabled,
-        FactoryWorkspaceCreationFailed,
-        WorkspaceDoesNotExist){
+        BrandingPages){
 
         function modernize(){
             Modernizr.load({
@@ -83,9 +61,21 @@ define(["jquery","config",
                 $(document).ready(function(){
 
                     modernize();
-                    var uvOptions = {}; //UserVoice object
-                    
-                    if (uvOptions){}
+                    var brandingPages = {// product.json file contains branding data for these pages. pageName is used as the key.
+                        1:{class:".400",pageName:"error400"},
+                        2:{class:".401",pageName:"error401"},
+                        3:{class:".403",pageName:"error403"},
+                        4:{class:".404",pageName:"error404"},
+                        5:{class:".405",pageName:"error405"},
+                        6:{class:".500",pageName:"error500"},
+                        7:{class:".503",pageName:"error503"},
+                        8:{class:".504",pageName:"error504"},
+                        9:{class:".browser-not-supported",pageName:"BrowserNotSupported"},
+                        10:{class:".error-cookies-disabled",pageName:"YourCookiesAreDisabled"},
+                        11:{class:".error-factory-creation",pageName:"FactoryWorkspaceCreationFailed"},
+                        12:{class:".error-tenant-name",pageName:"WorkspaceDoesNotExist"},
+                        13:{class:".maintenance",pageName:"Maintenance"}
+                    };
                     var forgotPasswordForm = $(".forgotpassword-form"),
                         resetPasswordForm = $(".resetpassword-form"),
                         errorContainer = $(".error-container"),
@@ -94,111 +84,16 @@ define(["jquery","config",
                         factoryUsageNotification =  $(".factory-notification"),
                         mainpage = $(".main-page"),
                         acceptLicensePage = $(".accept-license-form"),
-                        fslNotAcceptedPage = $(".fair-source-license-is-not-accepted-error"),
-                        maintenance = $(".maintenance"),
-                        error400 = $(".400"),
-                        error401 = $(".401"),
-                        error403 = $(".403"),
-                        error404 = $(".404"),
-                        error405 = $(".405"),
-                        error500 = $(".500"),
-                        error503 = $(".503"),
-                        error504 = $(".504"),
-                        browserNotSupported = $(".browser-not-supported"),
-                        yourCookiesAreDisabled = $(".error-cookies-disabled"),
-                        factoryWorkspaceCreationFailed = $(".error-factory-creation"),
-                        workspaceDoesNotExist = $(".error-tenant-name");
+                        fslNotAcceptedPage = $(".fair-source-license-is-not-accepted-error");
 
-                    if(maintenance.length !== 0){
-                        (function(){
-                            Maintenance.get(maintenance);
-                        }());
-
-                    }
-
-                    if(error400.length !== 0){
-                        (function(){
-                            Error400.get(error400);
-                        }());
-
-                    }
-
-                    if(error401.length !== 0){
-                        (function(){
-                            Error401.get(error401);
-                        }());
-
-                    }
-
-                    if(error403.length !== 0){
-                        (function(){
-                            Error403.get(error403);
-                        }());
-
-                    }
-
-                    if(error404.length !== 0){
-                        (function(){
-                            Error404.get(error404);
-                        }());
-
-                    }
-
-                    if(error405.length !== 0){
-                        (function(){
-                            Error405.get(error405);
-                        }());
-
-                    }
-
-                    if(error500.length !== 0){
-                        (function(){
-                            Error500.get(error500);
-                        }());
-
-                    }
-
-                    if(error503.length !== 0){
-                        (function(){
-                            Error503.get(error503);
-                        }());
-
-                    }
-
-                    if(error504.length !== 0){
-                        (function(){
-                            Error504.get(error504);
-                        }());
-
-                    }
-
-                    if(browserNotSupported.length !== 0){
-                        (function(){
-                            BrowserNotSupported.get(browserNotSupported);
-                        }());
-
-                    }
-
-                    if(yourCookiesAreDisabled.length !== 0){
-                        (function(){
-                            YourCookiesAreDisabled.get(yourCookiesAreDisabled);
-                        }());
-
-                    }
-
-                    if(factoryWorkspaceCreationFailed.length !== 0){
-                        (function(){
-                            FactoryWorkspaceCreationFailed.get(factoryWorkspaceCreationFailed);
-                        }());
-
-                    }
-
-                    if(workspaceDoesNotExist.length !== 0){
-                        (function(){
-                            WorkspaceDoesNotExist.get(workspaceDoesNotExist);
-                        }());
-
-                    }
+                    $.each(brandingPages, function(i,val){
+                        var page = $(val.class);
+                        if (page.length !== 0) {
+                            (function(){
+                                BrandingPages.get(page, val.pageName);
+                            }());
+                        }
+                    });
 
                     if(fslNotAcceptedPage.length !== 0){
                         (function(){

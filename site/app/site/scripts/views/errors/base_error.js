@@ -16,50 +16,38 @@
  * from Codenvy S.A..
  */
  
-define(["jquery", "models/account", "backbone"],
-
-    function($, Account, Backbone){
-        var Error405 = Backbone.View.extend({
-
-        	initialize : function(){
+ define(['jquery','backbone',"models/account"],
+ 	function($, Backbone, Account){
+ 		var BaseErrorPage = Backbone.View.extend({
+ 			initialize : function(options){
                 var self = this;
                 Account.getBrandingInfo()
                 .done(function(Branding){
                     try{
-                        document.title = Branding.errorpage.error405.title;
+                        document.title = Branding.errorpage[options.pageName].title;
                     }catch(err){
-                        window.console.error('Branding error. Missing title in product.json');
+                        window.console.error('Branding error. Missing title for ' + options.pageName + ' in product.json');
                     }
                     try{
-                        $('.header').html(Branding.errorpage.error405.header);
+                        $('.header').html(Branding.errorpage[options.pageName].header);
                     }catch(err){
-                        window.console.error('Branding error. Missing header for 405-error in product.json');
+                        window.console.error('Branding error. Missing header for ' + options.pageName + ' in product.json');
                     }
                     try{
-                        $('.message').html(Branding.errorpage.error405.message);
+                        $('.message').html(Branding.errorpage[options.pageName].message);
                     }catch(err){
-                        window.console.error('Branding error. Missing error message for 405-error in product.json');
+                        window.console.error('Branding error. Missing error message for ' + options.pageName +' in product.json');
                     }
                 })
                 .then(function(){
                     self._showHidden();
                 });
-        	},
+ 			},
+
             _showHidden : function(){
                 this.$el.removeClass('hidden');
             }
-        });
-
-
-        return {
-            get : function(form){
-                if(typeof form === 'undefined'){
-                    throw new Error("Need a form");
-                }
-                return new Error405({el:form});
-            },
-
-            Error405 : Error405
-        };
-    }
-);
+ 		});
+ 		return BaseErrorPage;
+ 	}
+ 	);
