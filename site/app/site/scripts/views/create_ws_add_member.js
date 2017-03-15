@@ -16,20 +16,12 @@
  * from Codenvy S.A..
  */
  
-define(["jquery","underscore", "backbone", "models/account","views/accountformbase"],
+define(["jquery","underscore", "backbone", "models/account", "views/branding-base"],
 
-    function($, _, Backbone, Account){
-        var CreateWsAddMember = Backbone.View.extend({
+    function($, _, Backbone, Account, BrandingBasePage){
+        var CreateWsAddMember = BrandingBasePage.extend({
             
             initialize : function(){
-                Account.getBrandingInfo()
-                .done(function(Branding){
-                    try{
-                        document.title = Branding.title + ' | ' + document.title;
-                    }catch(err){
-                        window.console.error('Branding error. Missing title in product.json');
-                    }
-                });
                 var bearertoken = Account.getQueryParameterByName("bearertoken"),
                  redirect_url = Account.getQueryParameterByName("redirect_url");
                 if (bearertoken) {

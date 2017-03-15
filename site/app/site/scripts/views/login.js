@@ -28,14 +28,6 @@
             createTemplate : Handlebars.compile(createTemplate),
             oauthTemplate : Handlebars.compile(oauthTemplate),
             initialize : function(attributes){
-                Account.getBrandingInfo()
-                .done(function(Branding){
-                    try{
-                        document.title = Branding.title + ' | ' + document.title;
-                    }catch(err){
-                        window.console.error('Branding error. Missing title in product.json');
-                    }
-                });
                 AccountFormBase.prototype.initialize.apply(this,attributes);
                 Account.isApiAvailable()
                 .then(function(apiAvailable){

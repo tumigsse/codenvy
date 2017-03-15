@@ -25,8 +25,6 @@ define(["jquery","config",
         "views/factory-usage-notification",
         "views/login",
         "views/accept-fair-source-license",
-        "views/fair-source-license-is-not-accepted-error",
-        "views/maintenance",
         "views/errors/branding-pages"
         ],
 
@@ -39,8 +37,6 @@ define(["jquery","config",
         FactoryUsageNotification,
         MainPage,
         AcceptLicensePage,
-        FSLNotAcceptedErrorPage,
-        Maintenance,
         BrandingPages){
 
         function modernize(){
@@ -74,7 +70,8 @@ define(["jquery","config",
                         10:{class:".error-cookies-disabled",pageName:"YourCookiesAreDisabled"},
                         11:{class:".error-factory-creation",pageName:"FactoryWorkspaceCreationFailed"},
                         12:{class:".error-tenant-name",pageName:"WorkspaceDoesNotExist"},
-                        13:{class:".maintenance",pageName:"Maintenance"}
+                        13:{class:".maintenance",pageName:"Maintenance"},
+                        14:{class:".fair-source-license-is-not-accepted-error",pageName:"AccessRequiresLicenseAcceptance"}
                     };
                     var forgotPasswordForm = $(".forgotpassword-form"),
                         resetPasswordForm = $(".resetpassword-form"),
@@ -83,8 +80,7 @@ define(["jquery","config",
                         onpremloginForm = $(".onpremloginForm"),
                         factoryUsageNotification =  $(".factory-notification"),
                         mainpage = $(".main-page"),
-                        acceptLicensePage = $(".accept-license-form"),
-                        fslNotAcceptedPage = $(".fair-source-license-is-not-accepted-error");
+                        acceptLicensePage = $(".accept-license-form");
 
                     $.each(brandingPages, function(i,val){
                         var page = $(val.class);
@@ -94,17 +90,6 @@ define(["jquery","config",
                             }());
                         }
                     });
-
-                    if(fslNotAcceptedPage.length !== 0){
-                        (function(){
-                            var form = FSLNotAcceptedErrorPage.get(fslNotAcceptedPage),
-                            errorReport = ErrorReport.get(errorContainer);
-                            form.on("invalid", function(field,message){
-                                errorReport.show(message);
-                            });
-                        }());
-
-                    }
 
                     if(acceptLicensePage.length !== 0){
                         (function(){
