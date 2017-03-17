@@ -45,7 +45,8 @@ import org.eclipse.che.api.git.GitUserResolver;
 import org.eclipse.che.api.git.LocalGitUserResolver;
 import org.eclipse.che.api.project.server.ProjectApiModule;
 import org.eclipse.che.api.project.server.ProjectServiceLinksInjector;
-import org.eclipse.che.api.user.server.spi.PreferenceDao;
+import org.eclipse.che.api.ssh.server.HttpSshServiceClient;
+import org.eclipse.che.api.ssh.server.SshServiceClient;
 import org.eclipse.che.commons.lang.Pair;
 import org.eclipse.che.everrest.CheAsynchronousJobPool;
 import org.eclipse.che.git.impl.jgit.JGitConnectionFactory;
@@ -54,8 +55,6 @@ import org.eclipse.che.inject.DynaModule;
 import org.eclipse.che.plugin.github.server.inject.GitHubModule;
 import org.eclipse.che.plugin.maven.generator.archetype.ArchetypeGenerator;
 import org.eclipse.che.plugin.maven.server.inject.MavenModule;
-import org.eclipse.che.plugin.ssh.key.HttpSshServiceClient;
-import org.eclipse.che.plugin.ssh.key.SshServiceClient;
 import org.eclipse.che.security.oauth.RemoteOAuthTokenProvider;
 import org.eclipse.che.security.oauth1.RemoteOAuthAuthorizationHeaderProvider;
 import org.everrest.core.impl.async.AsynchronousJobPool;
@@ -114,8 +113,6 @@ public class MachineModule extends AbstractModule {
         bindConstant().annotatedWith(Names.named("auth.sso.cookies_disabled_error_page_url"))
                       .to("/site/error/error-cookies-disabled");
         bindConstant().annotatedWith(Names.named("auth.sso.login_page_url")).to("/site/login");
-
-        bind(PreferenceDao.class).to(org.eclipse.che.RemotePreferenceDao.class);
 
         bind(String.class).annotatedWith(Names.named("event.bus.url")).toProvider(EventBusURLProvider.class);
 
