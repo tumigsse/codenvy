@@ -19,12 +19,12 @@ import {CodenvyTeamEventsManager} from './codenvy-team-events-manager.factory';
 import {CodenvyUser} from './codenvy-user.factory';
 
 interface ITeamsResource<T> extends ng.resource.IResourceClass<T> {
-  getTeams(): ng.resource.IResource<T>,
-  createTeam(data: {name: string, parent: string}): ng.resource.IResource<T>,
-  fetchTeam(data: {id: string}): ng.resource.IResource<T>,
-  deleteTeam(data: {id: string}): ng.resource.IResource<T>,
-  updateTeam(data: {id: string}, team: any): ng.resource.IResource<T>,
-  findTeam(data: {teamName: string}): ng.resource.IResource<T>
+  getTeams(): ng.resource.IResource<T>;
+  createTeam(data: {name: string, parent: string}): ng.resource.IResource<T>;
+  fetchTeam(data: {id: string}): ng.resource.IResource<T>;
+  deleteTeam(data: {id: string}): ng.resource.IResource<T>;
+  updateTeam(data: {id: string}, team: any): ng.resource.IResource<T>;
+  findTeam(data: {teamName: string}): ng.resource.IResource<T>;
 }
 
 /**
@@ -44,6 +44,10 @@ export class CodenvyTeam {
    */
   private teamsMap : Map<string, any> = new Map();
   /**
+   * Teams map by team's name.
+   */
+  private teamsByNameMap : Map<string, any> = new Map();
+  /**
    * Array of teams.
    */
   private teams : any = [];
@@ -58,7 +62,7 @@ export class CodenvyTeam {
   /**
    * The Codenvy Team notifications.
    */
-  teamEventsManager: CodenvyTeamEventsManager;
+  private teamEventsManager: CodenvyTeamEventsManager;
   /**
    * User's personal account.
    */
@@ -114,7 +118,7 @@ export class CodenvyTeam {
   /**
    * Request the list of available teams.
    *
-   * @returns {PromiseLike<TResult>|Promise<TResult>}
+   * @returns {ng.IPromise<any>}
    */
   fetchTeams(): ng.IPromise<any> {
     let defer = this.$q.defer();
@@ -126,7 +130,7 @@ export class CodenvyTeam {
       this.codenvyUser.fetchUser().then(() => {
         this.processTeams(teams, this.codenvyUser.getUser());
         defer.resolve();
-      }, (error) => {
+      }, (error: any) => {
         if (error.status === 304) {
           this.processTeams(teams, this.codenvyUser.getUser());
           defer.resolve();
@@ -138,8 +142,11 @@ export class CodenvyTeam {
       defer.reject(error);
     });
 
-    return defer.promise.then(() => {
+    return defer.promise.then((teams: any) => {
       this.fetchTeamsDefer.resolve();
+      return teams;
+    }, (error: any) => {
+      return this.$q.reject(error);
     });
   }
 
@@ -204,7 +211,7 @@ export class CodenvyTeam {
   /**
    * Requests team by it's id.
    *
-   * @param name the team's name
+   * @param id the team's Id
    * @returns {ng.IPromise<any>} result promise
    */
   fetchTeamById(id: string): ng.IPromise<any> {
@@ -212,6 +219,7 @@ export class CodenvyTeam {
     let resultPromise = promise.then((data) => {
       this.teamsMap.set(id, data);
     });
+
     return resultPromise;
   }
 
@@ -223,7 +231,17 @@ export class CodenvyTeam {
    */
   fetchTeamByName(name: string): ng.IPromise<any> {
     let promise = this.remoteTeamAPI.findTeam({'teamName' : name}).$promise;
-    return promise;
+    let resultPromise = promise.then((team: any) => {
+      this.teamsByNameMap.set(team.qualifiedName, team);
+      return team;
+    }, (error: any) => {
+      if (error.status === 304) {
+        return this.getTeamByName(name);
+      }
+      return this.$q.reject(error);
+    });
+
+    return resultPromise;
   }
 
   /**
@@ -233,11 +251,19 @@ export class CodenvyTeam {
    * @returns {any} team or <code>null</code> if not found
    */
   getTeamByName(name: string): any {
+    if (this.personalAccount && this.personalAccount.qualifiedName === name) {
+      return this.personalAccount;
+    }
+
+    if (this.teamsByNameMap.has(name)) {
+      return this.teamsByNameMap.get(name);
+    }
+
     for (let i = 0; i < this.teams.length; i++) {
       if (this.teams[i].qualifiedName === name) {
         return this.teams[i];
       }
-    };
+    }
 
     return null;
   }
@@ -245,7 +271,7 @@ export class CodenvyTeam {
   /**
    * Returns team by it's id.
    *
-   * @param team's id
+   * @param id {string} team's id
    * @returns {any} team or <code>null</code> if not found
    */
   getTeamById(id: string): any {
@@ -301,7 +327,7 @@ export class CodenvyTeam {
       }
     });
 
-    // Avoid roles intake (filter if any role's action is subset of any other):
+    // avoid roles intake (filter if any role's action is subset of any other):
     roles = this.lodash.filter(roles, (role: any) => {
       return !this._checkIsSubset(role, roles);
     });
@@ -321,7 +347,7 @@ export class CodenvyTeam {
     let isSubset = false;
     for (let i = 0; i < roles.length; i++) {
       let r = roles[i];
-      // Checks provided role's action is subset of any other role's actions in the roles list:
+      // checks provided role's action is subset of any other role's actions in the roles list:
       if (role.actions.length === this.lodash.intersection(role.actions, r.actions).length && role.actions.length !== r.actions.length) {
         return true;
       }

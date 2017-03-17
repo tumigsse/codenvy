@@ -123,8 +123,9 @@ public class LimitsCheckingWorkspaceManagerTest {
     }
 
     @Test(expectedExceptions = LimitExceededException.class,
-          expectedExceptionsMessageRegExp = "Workspace namespace/workspace.. needs 3000MB to start. Your account has 200MB and 100MB " +
-                                            "in use\\. The workspace can't be start\\. Stop other workspaces or grant more resources\\.")
+          expectedExceptionsMessageRegExp = "Workspace namespace/workspace.. needs 3000MB to start\\. " +
+                                            "Your account has 200MB available and 100MB in use\\. " +
+                                            "The workspace can't be start. Stop other workspaces or grant more resources\\.")
     public void shouldThrowLimitExceedExceptionIfAccountDoesNotHaveEnoughAvailableRamResource() throws Exception {
         doThrow(new NoEnoughResourcesException(singletonList(new ResourceImpl(RamResourceType.ID,
                                                                               200L,
@@ -168,7 +169,7 @@ public class LimitsCheckingWorkspaceManagerTest {
     }
 
     @Test(expectedExceptions = LimitExceededException.class,
-          expectedExceptionsMessageRegExp = "You are only allowed to create 5 workspaces.")
+          expectedExceptionsMessageRegExp = "You are not allowed to create more workspaces\\.")
     public void shouldThrowLimitExceedExceptionIfAccountDoesNotHaveEnoughAvailableWorkspaceResource() throws Exception {
         //given
         doThrow(new NoEnoughResourcesException(emptyList(),
@@ -202,7 +203,7 @@ public class LimitsCheckingWorkspaceManagerTest {
     }
 
     @Test(expectedExceptions = LimitExceededException.class,
-          expectedExceptionsMessageRegExp = "You are only allowed to start 5 workspaces.")
+          expectedExceptionsMessageRegExp = "You are not allowed to start more workspaces\\.")
     public void shouldThrowLimitExceedExceptionIfAccountDoesNotHaveEnoughAvailableRuntimeResource() throws Exception {
         //given
         doThrow(new NoEnoughResourcesException(emptyList(),

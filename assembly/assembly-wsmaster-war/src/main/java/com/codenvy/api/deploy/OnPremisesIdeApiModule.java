@@ -17,7 +17,6 @@ package com.codenvy.api.deploy;
 import com.codenvy.api.AdminApiModule;
 import com.codenvy.api.audit.server.AuditService;
 import com.codenvy.api.audit.server.AuditServicePermissionsFilter;
-import com.codenvy.api.license.SystemLicenseWorkspaceFilter;
 import com.codenvy.api.license.server.SystemLicenseModule;
 import com.codenvy.api.machine.server.jpa.OnPremisesJpaMachineModule;
 import com.codenvy.api.permission.server.PermissionChecker;
@@ -41,6 +40,7 @@ import com.codenvy.auth.sso.server.organization.UserCreator;
 import com.codenvy.ldap.LdapModule;
 import com.codenvy.ldap.auth.LdapAuthenticationHandler;
 import com.codenvy.machine.agent.WorkspaceInfrastructureModule;
+import com.codenvy.machine.authentication.server.MachineAuthLinksInjector;
 import com.codenvy.machine.backup.DockerEnvironmentBackupManager;
 import com.codenvy.machine.backup.EnvironmentBackupManager;
 import com.codenvy.organization.api.OrganizationApiModule;
@@ -79,7 +79,7 @@ import org.eclipse.che.api.core.rest.CheJsonProvider;
 import org.eclipse.che.api.core.rest.MessageBodyAdapter;
 import org.eclipse.che.api.core.rest.MessageBodyAdapterInterceptor;
 import org.eclipse.che.api.environment.server.MachineInstanceProvider;
-import org.eclipse.che.api.environment.server.MachineServiceLinksInjector;
+import org.eclipse.che.api.environment.server.MachineLinksInjector;
 import org.eclipse.che.api.factory.server.FactoryAcceptValidator;
 import org.eclipse.che.api.factory.server.FactoryCreateValidator;
 import org.eclipse.che.api.factory.server.FactoryEditValidator;
@@ -138,7 +138,7 @@ import org.flywaydb.core.internal.util.PlaceholderReplacer;
 import javax.sql.DataSource;
 import java.util.Map;
 
-import static com.codenvy.api.license.SystemLicenseLoginFilter.NO_USER_INTERACTION;
+import static com.codenvy.api.license.filter.SystemLicenseLoginFilter.NO_USER_INTERACTION;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static com.google.inject.matcher.Matchers.subclassesOf;
 import static org.eclipse.che.inject.Matchers.names;
@@ -274,7 +274,7 @@ public class OnPremisesIdeApiModule extends AbstractModule {
         bind(com.codenvy.machine.authentication.server.MachineTokenRegistry.class);
         bind(com.codenvy.machine.authentication.server.MachineTokenService.class);
         bind(WorkspaceServiceLinksInjector.class).to(com.codenvy.machine.authentication.server.WorkspaceServiceAuthLinksInjector.class);
-        bind(MachineServiceLinksInjector.class).to(com.codenvy.machine.authentication.server.MachineServiceAuthLinksInjector.class);
+        bind(MachineLinksInjector.class).to(MachineAuthLinksInjector.class);
         install(new com.codenvy.machine.authentication.server.interceptor.InterceptorModule());
         bind(ServerClient.class).to(com.codenvy.auth.sso.client.MachineSsoServerClient.class);
         bind(com.codenvy.auth.sso.client.MachineSessionInvalidator.class);
@@ -340,7 +340,6 @@ public class OnPremisesIdeApiModule extends AbstractModule {
 
         install(new InstrumentationModule());
         bind(org.eclipse.che.api.ssh.server.SshService.class);
-        bind(org.eclipse.che.api.environment.server.MachineService.class);
 
         install(new ScheduleModule());
 
@@ -455,8 +454,6 @@ public class OnPremisesIdeApiModule extends AbstractModule {
         // install system license verification stuff
         bindConstant().annotatedWith(Names.named(NO_USER_INTERACTION)).to(true);
         install(new SystemLicenseModule());
-
-        bind(SystemLicenseWorkspaceFilter.class);
 
         MapBinder<String, org.eclipse.che.plugin.docker.machine.ServerEvaluationStrategy> strategies =
                 MapBinder.newMapBinder(binder(),

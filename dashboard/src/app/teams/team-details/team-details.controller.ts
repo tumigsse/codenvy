@@ -19,6 +19,7 @@ import {CodenvyResourceLimits} from '../../../components/api/codenvy-resource-li
 import {CodenvyPermissions} from '../../../components/api/codenvy-permissions.factory';
 import {CodenvyUser} from '../../../components/api/codenvy-user.factory';
 import {CodenvyTeamEventsManager} from '../../../components/api/codenvy-team-events-manager.factory';
+import {TeamDetailsService} from './team-details.service';
 
 enum Tab {Settings, Members, Workspaces}
 
@@ -85,10 +86,6 @@ export class TeamDetailsController {
    */
   private newName: string;
   /**
-   * If <code>true</code> - team with pointed name doesn't exist or cannot be accessed.
-   */
-  private invalidTeam: boolean;
-  /**
    * Index of the selected tab.
    */
   private selectedTabIndex: number;
@@ -107,13 +104,16 @@ export class TeamDetailsController {
 
   private teamForm: ng.IFormController;
 
+  private hasTeamAccess: boolean;
+
   /**
    * Default constructor that is using resource injection
    * @ngInject for Dependency injection
    */
   constructor(codenvyTeam: CodenvyTeam, codenvyResourcesDistribution: CodenvyResourcesDistribution, codenvyPermissions: CodenvyPermissions,
-              codenvyUser: CodenvyUser, $route: ng.route.IRouteService, $location: ng.ILocationService, $rootScope: che.IRootScopeService, $scope: ng.IScope,
-              confirmDialogService: any, codenvyTeamEventsManager: CodenvyTeamEventsManager, cheNotification: any, lodash: any) {
+              codenvyUser: CodenvyUser, $route: ng.route.IRouteService, $location: ng.ILocationService, $rootScope: che.IRootScopeService,
+              $scope: ng.IScope, confirmDialogService: any, codenvyTeamEventsManager: CodenvyTeamEventsManager, cheNotification: any,
+              lodash: any, teamDetailsService: TeamDetailsService) {
     this.codenvyTeam = codenvyTeam;
     this.codenvyResourcesDistribution = codenvyResourcesDistribution;
     this.codenvyPermissions = codenvyPermissions;
@@ -169,50 +169,27 @@ export class TeamDetailsController {
       this.codenvyTeamEventsManager.removeDeleteHandler(deleteHandler);
     });
 
-    this.fetchTeamDetails();
-    this.fetchUser();
-  }
+    this.isLoading = true;
+    this.hasTeamAccess = true;
 
-  /**
-   * Fetches the team's details by it's name.
-   */
-  fetchTeamDetails(): void {
-    this.team  = this.codenvyTeam.getTeamByName(this.teamName);
+    this.team = teamDetailsService.getTeam();
+    this.owner = teamDetailsService.getOwner();
 
-    if (!this.team) {
-      this.codenvyTeam.fetchTeamByName(this.teamName).then((team: any) => {
-        this.team = team;
-        this.newName = angular.copy(this.team.name);
-        this.fetchLimits();
-        this.fetchUserPermissions();
-      }, (error: any) => {
-        this.invalidTeam = true;
-      });
-    } else {
+    if (this.team) {
       this.newName = angular.copy(this.team.name);
-      this.fetchLimits();
-      this.fetchUserPermissions();
-    }
-  }
-
-  /**
-   * Fetch user by name (the name is the same as accounts).
-   */
-  fetchUser(): void {
-    if (!this.teamName) {
-      return;
-    }
-
-    let parts = this.teamName.split('/');
-    let accountName = (parts && parts.length > 0) ? parts[0] : '';
-
-    this.codenvyUser.fetchUserByName(accountName).then(() => {
-      this.owner = this.codenvyUser.getUserByName(accountName);
-    }, (error: any) => {
-      if (error.status === 304) {
-        this.owner = this.codenvyUser.getUserByName(accountName);
+      if (this.owner) {
+        this.fetchUserPermissions();
+      } else {
+        teamDetailsService.fetchOwnerByTeamName(this.teamName).then((owner: any) => {
+          this.owner = owner;
+        }, (error: any) => {
+          this.isLoading = false;
+          cheNotification.showError(error && error.data && error.data.message !== null ? error.data.message : 'Failed to find team owner.');
+        }).finally(() => {
+          this.fetchUserPermissions();
+        });
       }
-    });
+    }
   }
 
   /**
@@ -221,11 +198,17 @@ export class TeamDetailsController {
   fetchUserPermissions(): void {
     this.codenvyPermissions.fetchTeamPermissions(this.team.id).then(() => {
       this.allowedUserActions = this.processUserPermissions();
+      this.fetchLimits();
     }, (error: any) => {
       this.isLoading = false;
       if (error.status === 304) {
         this.allowedUserActions = this.processUserPermissions();
+        this.fetchLimits();
+      } else if (error.status === 403) {
+        this.allowedUserActions = [];
+        this.hasTeamAccess = false;
       }
+      this.isLoading = false;
     });
   }
 
@@ -323,7 +306,7 @@ export class TeamDetailsController {
   updateTeamName(): void {
     if (this.newName && this.team && this.newName !== this.team.name) {
       this.team.name = this.newName;
-      this.codenvyTeam.updateTeam(this.team).then((team) => {
+      this.codenvyTeam.updateTeam(this.team).then((team: any) => {
         this.codenvyTeam.fetchTeams().then(() => {
           this.$location.path('/team/' + team.qualifiedName);
         });
@@ -342,30 +325,34 @@ export class TeamDetailsController {
       return;
     }
 
-    let ramLimit = this.codenvyResourcesDistribution.getTeamResourceByType(this.team.id, CodenvyResourceLimits.RAM);
-    let workspaceLimit = this.codenvyResourcesDistribution.getTeamResourceByType(this.team.id, CodenvyResourceLimits.WORKSPACE);
-    let runtimeLimit = this.codenvyResourcesDistribution.getTeamResourceByType(this.team.id, CodenvyResourceLimits.RUNTIME);
-
     let resources = this.codenvyResourcesDistribution.getTeamResources(this.team.id);
 
     resources = angular.copy(resources);
 
-    if (this.limits.ramCap) {
+    let resourcesToRemove = [CodenvyResourceLimits.TIMEOUT];
+
+    if (this.limits.ramCap !== null && this.limits.ramCap !== undefined) {
       resources = this.codenvyResourcesDistribution.setTeamResourceLimitByType(resources, CodenvyResourceLimits.RAM, (this.limits.ramCap * 1024));
+    } else {
+      resourcesToRemove.push(CodenvyResourceLimits.RAM);
     }
 
-    if (this.limits.workspaceCap) {
+    if (this.limits.workspaceCap !== null && this.limits.workspaceCap !== undefined) {
       resources = this.codenvyResourcesDistribution.setTeamResourceLimitByType(resources, CodenvyResourceLimits.WORKSPACE, this.limits.workspaceCap);
+    } else {
+      resourcesToRemove.push(CodenvyResourceLimits.WORKSPACE);
     }
 
-    if (this.limits.runtimeCap) {
+    if (this.limits.runtimeCap !== null && this.limits.runtimeCap !== undefined) {
       resources = this.codenvyResourcesDistribution.setTeamResourceLimitByType(resources, CodenvyResourceLimits.RUNTIME, this.limits.runtimeCap);
+    } else {
+      resourcesToRemove.push(CodenvyResourceLimits.RUNTIME);
     }
 
     // if the timeout resource will be send in this case - it will set the timeout for the current team, and the updating timeout of
     // parent team will not affect the current team, so to avoid this - remove timeout resource if present:
     this.lodash.remove(resources, (resource: any) => {
-      return resource.type === CodenvyResourceLimits.TIMEOUT;
+      return resourcesToRemove.indexOf(resource.type) >= 0;
     });
 
 

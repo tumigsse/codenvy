@@ -21,10 +21,10 @@
  * @element
  *
  * @description
- * `<list-team-workspaces team="ctrl.team"></list-team-workspaces>` for displaying list of workspaces
+ * `<list-team-workspaces></list-team-workspaces>` for displaying list of workspaces
  *
  * @usage
- *   <list-team-workspaces team="ctrl.team"></list-team-workspaces>
+ *   <list-team-workspaces></list-team-workspaces>
  *
  * @author Ann Shumilova
  */
@@ -37,10 +37,5 @@ export class ListTeamWorkspaces implements ng.IDirective {
   controllerAs: string = 'listTeamWorkspacesController';
   bindToController: boolean = true;
 
-  scope: any = {
-    team: '='
-  };
-
-  constructor () {
-  }
+  scope: any = {};
 }

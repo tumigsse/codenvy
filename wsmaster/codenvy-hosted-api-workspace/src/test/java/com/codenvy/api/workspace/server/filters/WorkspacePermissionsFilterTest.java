@@ -27,7 +27,6 @@ import org.eclipse.che.api.core.ForbiddenException;
 import org.eclipse.che.api.core.model.user.User;
 import org.eclipse.che.api.core.rest.ApiExceptionMapper;
 import org.eclipse.che.api.core.rest.shared.dto.ServiceError;
-import org.eclipse.che.api.environment.server.MachineService;
 import org.eclipse.che.api.workspace.server.WorkspaceManager;
 import org.eclipse.che.api.workspace.server.WorkspaceService;
 import org.eclipse.che.api.workspace.server.model.impl.WorkspaceImpl;
@@ -39,7 +38,6 @@ import org.everrest.core.Filter;
 import org.everrest.core.GenericContainerRequest;
 import org.everrest.core.RequestFilter;
 import org.everrest.core.resource.GenericResourceMethod;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.testng.MockitoTestNGListener;
 import org.testng.annotations.BeforeMethod;
@@ -50,10 +48,8 @@ import org.testng.annotations.Test;
 import java.lang.reflect.Method;
 
 import static com.codenvy.api.workspace.server.WorkspaceDomain.CONFIGURE;
-import static com.codenvy.api.workspace.server.WorkspaceDomain.DOMAIN_ID;
 import static com.codenvy.api.workspace.server.WorkspaceDomain.READ;
 import static com.codenvy.api.workspace.server.WorkspaceDomain.RUN;
-import static com.codenvy.api.workspace.server.WorkspaceDomain.USE;
 import static com.jayway.restassured.RestAssured.given;
 import static org.everrest.assured.JettyHttpServer.ADMIN_USER_NAME;
 import static org.everrest.assured.JettyHttpServer.ADMIN_USER_PASSWORD;
@@ -106,9 +102,6 @@ public class WorkspacePermissionsFilterTest {
 
     @Mock
     private WorkspaceService workspaceService;
-
-    @Mock
-    private MachineService machineService;
 
     @Mock
     private AccountPermissionsChecker accountPermissionsChecker;
@@ -230,133 +223,6 @@ public class WorkspacePermissionsFilterTest {
         verifyZeroInteractions(subject);
     }
 
-    @Test
-    public void shouldCheckPermissionsOnMachineCreating() throws Exception {
-        when(subject.hasPermission("workspace", "workspace123", "run")).thenReturn(true);
-
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .pathParam("id", "workspace123")
-                                         .contentType("application/json")
-                                         .when()
-                                         .post(SECURE_PATH + "/workspace/{id}/machine");
-
-        assertEquals(response.getStatusCode(), 204);
-        verify(machineService).startMachine(eq("workspace123"), any());
-        verify(subject).hasPermission(eq("workspace"), eq("workspace123"), eq("run"));
-    }
-
-    @Test
-    public void shouldCheckPermissionsOnMachineDestroying() throws Exception {
-        when(subject.hasPermission("workspace", "workspace123", RUN)).thenReturn(true);
-
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .pathParam("id", "workspace123")
-                                         .contentType("application/json")
-                                         .when()
-                                         .delete(SECURE_PATH + "/workspace/{id}/machine/machine123");
-
-        assertEquals(response.getStatusCode(), 204);
-        verify(machineService).stopMachine(eq("workspace123"), any());
-        verify(subject).hasPermission(eq("workspace"), eq("workspace123"), Matchers.eq(RUN));
-    }
-
-    @Test
-    public void shouldCheckPermissionsOnGettingMachineById() throws Exception {
-        when(subject.hasPermission("workspace", "workspace123", USE)).thenReturn(true);
-
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .pathParam("id", "workspace123")
-                                         .contentType("application/json")
-                                         .when()
-                                         .get(SECURE_PATH + "/workspace/{id}/machine/machine123");
-
-        assertEquals(response.getStatusCode(), 204);
-        verify(machineService).getMachineById(eq("workspace123"), eq("machine123"));
-        verify(subject).hasPermission(DOMAIN_ID, "workspace123", USE);
-    }
-
-    @Test
-    public void shouldCheckPermissionsOnGettingMachines() throws Exception {
-        when(subject.hasPermission("workspace", "workspace123", USE)).thenReturn(true);
-
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .pathParam("id", "workspace123")
-                                         .contentType("application/json")
-                                         .when()
-                                         .get(SECURE_PATH + "/workspace/{id}/machine");
-
-        assertEquals(response.getStatusCode(), 200);
-        verify(machineService).getMachines(eq("workspace123"));
-        verify(subject).hasPermission(DOMAIN_ID, "workspace123", USE);
-    }
-
-    @Test
-    public void shouldCheckPermissionsOnCommandExecuting() throws Exception {
-        when(subject.hasPermission("workspace", "workspace123", USE)).thenReturn(true);
-
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .pathParam("id", "workspace123")
-                                         .contentType("application/json")
-                                         .when()
-                                         .post(SECURE_PATH + "/workspace/{id}/machine/machine123/command");
-
-        assertEquals(response.getStatusCode(), 204);
-        verify(machineService).executeCommandInMachine(eq("workspace123"), eq("machine123"), any(), anyString());
-        verify(subject).hasPermission(DOMAIN_ID, "workspace123", USE);
-    }
-
-    @Test
-    public void shouldCheckPermissionsOnProcessesGetting() throws Exception {
-        when(subject.hasPermission("workspace", "workspace123", USE)).thenReturn(true);
-
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .pathParam("id", "workspace123")
-                                         .contentType("application/json")
-                                         .when()
-                                         .get(SECURE_PATH + "/workspace/{id}/machine/machine123/process");
-
-        assertEquals(response.getStatusCode(), 200);
-        verify(machineService).getProcesses(eq("workspace123"), eq("machine123"));
-        verify(subject).hasPermission(DOMAIN_ID, "workspace123", USE);
-    }
-
-    @Test
-    public void shouldCheckPermissionsOnProcessStopping() throws Exception {
-        when(subject.hasPermission("workspace", "workspace123", USE)).thenReturn(true);
-
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .pathParam("id", "workspace123")
-                                         .contentType("application/json")
-                                         .when()
-                                         .delete(SECURE_PATH + "/workspace/{id}/machine/machine123/process/123");
-
-        assertEquals(response.getStatusCode(), 204);
-        verify(machineService).stopProcess(eq("workspace123"), eq("machine123"), eq(123));
-        verify(subject).hasPermission(DOMAIN_ID, "workspace123", USE);
-    }
-
-    @Test
-    public void shouldCheckPermissionsOnProcessLogsGetting() throws Exception {
-        when(subject.hasPermission("workspace", "workspace123", USE)).thenReturn(true);
-
-        final Response response = given().auth()
-                                         .basic(ADMIN_USER_NAME, ADMIN_USER_PASSWORD)
-                                         .pathParam("id", "workspace123")
-                                         .contentType("application/json")
-                                         .when()
-                                         .get(SECURE_PATH + "/workspace/{id}/machine/machine123/process/123/logs");
-
-        assertEquals(response.getStatusCode(), 204);
-        verify(machineService).getProcessLogs(eq("workspace123"), eq("machine123"), eq(123), any());
-        verify(subject).hasPermission(DOMAIN_ID, "workspace123", USE);
-    }
 
     @Test
     public void shouldCheckUserPermissionsOnWorkspaceStopping() throws Exception {
@@ -664,7 +530,6 @@ public class WorkspacePermissionsFilterTest {
         assertEquals(unwrapError(response), "The user does not have permission to " + action + " workspace with id 'workspace123'");
 
         verifyZeroInteractions(workspaceService);
-        verifyZeroInteractions(machineService);
     }
 
     @Test(dataProvider = "coveredPaths")
@@ -728,14 +593,6 @@ public class WorkspacePermissionsFilterTest {
                 {"/workspace/workspace123/project", "post", CONFIGURE},
                 {"/workspace/workspace123/project/spring", "put", CONFIGURE},
                 {"/workspace/workspace123/project/spring", "delete", CONFIGURE},
-                {"/workspace/ws123/machine", "post", RUN},
-                {"/workspace/ws123/machine", "get", USE},
-                {"/workspace/ws123/machine/mc123", "delete", RUN},
-                {"/workspace/ws123/machine/mc123", "get", USE},
-                {"/workspace/ws123/machine/mc123/process", "get", USE},
-                {"/workspace/ws123/machine/mc123/process/123", "delete", USE},
-                {"/workspace/ws123/machine/mc123/process/123/logs", "get", USE},
-                {"/workspace/ws123/machine/mc123/command", "post", USE}
         };
     }
 

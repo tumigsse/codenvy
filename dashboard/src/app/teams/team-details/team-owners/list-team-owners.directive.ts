@@ -21,10 +21,10 @@
  * @element
  *
  * @description
- * `<list-team-owners team="ctrl.team"></list-team-owners>` for displaying list of owners
+ * `<list-team-owners></list-team-owners>` for displaying list of owners
  *
  * @usage
- *   <list-team-owners team="ctrl.team"></list-team-owners>
+ *   <list-team-owners></list-team-owners>
  *
  * @author Ann Shumilova
  */
@@ -37,10 +37,5 @@ export class ListTeamOwners implements ng.IDirective {
   controllerAs: string = 'listTeamOwnersController';
   bindToController: boolean = true;
 
-  scope: any = {
-    owner: '='
-  };
-
-  constructor () {
-  }
+  scope: any = {};
 }
