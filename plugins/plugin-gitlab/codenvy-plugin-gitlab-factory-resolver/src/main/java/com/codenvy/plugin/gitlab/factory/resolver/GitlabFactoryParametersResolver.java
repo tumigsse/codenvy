@@ -91,7 +91,7 @@ public class GitlabFactoryParametersResolver implements FactoryParametersResolve
         final GitlabUrl gitlabUrl = gitlabUrlParser.parse(factoryParameters.get("url"));
 
         // create factory from the following location if location exists, else create default factory
-        FactoryDto factory = urlFactoryBuilder.createFactory(CreateFactoryParams.create().codenvyJsonFileLocation(
+        FactoryDto factory = urlFactoryBuilder.createFactory(CreateFactoryParams.create().jsonFileLocation(
                 gitlabUrl.codenvyFactoryJsonFileLocation()));
 
         // add workspace configuration if not defined

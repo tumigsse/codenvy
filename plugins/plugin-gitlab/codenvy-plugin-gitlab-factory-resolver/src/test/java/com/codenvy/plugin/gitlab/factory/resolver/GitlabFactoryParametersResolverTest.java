@@ -146,7 +146,7 @@ public class GitlabFactoryParametersResolverTest {
 
         // check we called the builder with the following codenvy json file
         verify(urlFactoryBuilder).createFactory(createFactoryParamsArgumentCaptor.capture());
-        assertEquals(createFactoryParamsArgumentCaptor.getValue().codenvyJsonFileLocation(), "https://gitlab.com/eclipse/che/raw/master/.codenvy.json");
+        assertEquals(createFactoryParamsArgumentCaptor.getValue().jsonFileLocation(), "https://gitlab.com/eclipse/che/raw/master/.codenvy.json");
 
 
         // check we provide dockerfile and correct env
@@ -185,7 +185,7 @@ public class GitlabFactoryParametersResolverTest {
 
         // check we called the builder with the following codenvy json file
         verify(urlFactoryBuilder).createFactory(createFactoryParamsArgumentCaptor.capture());
-        assertEquals(createFactoryParamsArgumentCaptor.getValue().codenvyJsonFileLocation(), "https://gitlab.com/eclipse/che/raw/4.2.x/.codenvy.json");
+        assertEquals(createFactoryParamsArgumentCaptor.getValue().jsonFileLocation(), "https://gitlab.com/eclipse/che/raw/4.2.x/.codenvy.json");
 
         // check we provide dockerfile and correct env
         verify(urlFactoryBuilder).buildWorkspaceConfig(eq("che"), eq("eclipse"), eq("https://gitlab.com/eclipse/che/raw/4.2.x/.codenvy.dockerfile"));
@@ -224,7 +224,7 @@ public class GitlabFactoryParametersResolverTest {
 
         // check we called the builder with the following codenvy json file
         verify(urlFactoryBuilder).createFactory(createFactoryParamsArgumentCaptor.capture());
-        assertEquals(createFactoryParamsArgumentCaptor.getValue().codenvyJsonFileLocation(), "https://gitlab.com/eclipse/che/raw/4.2.x/.codenvy.json");
+        assertEquals(createFactoryParamsArgumentCaptor.getValue().jsonFileLocation(), "https://gitlab.com/eclipse/che/raw/4.2.x/.codenvy.json");
 
         // check we provide dockerfile and correct env
         verify(urlFactoryBuilder).buildWorkspaceConfig(eq("che"), eq("eclipse"), eq("https://gitlab.com/eclipse/che/raw/4.2.x/.codenvy.dockerfile"));
