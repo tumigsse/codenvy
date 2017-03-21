@@ -16,15 +16,14 @@
 import {CodenvyLicense} from './codenvy-license.factory';
 import {CodenvyPermissions} from './codenvy-permissions.factory';
 
-interface IremoteUserAPI<T> extends ng.resource.IResourceClass<T> {
+interface IRemoteUserAPI<T> extends ng.resource.IResourceClass<T> {
   findByID(data: {userId: string}): ng.resource.IResource<T>;
   findByAlias(data: {alias: string}): ng.resource.IResource<T>;
   findByName(data: {name: string}): ng.resource.IResource<T>;
-  inRole: any;
-  getUsers: any;
-  createUser: any;
-  setPassword: any;
-  removeUserById: any;
+  getUsers(data: {maxItems: number, skipCount: number}): ng.resource.IResource<T>;
+  createUser(data: {password: string; name: string}): ng.resource.IResource<T>;
+  setPassword(data: string): ng.resource.IResource<T>;
+  removeUserById(data: {userId: string}): ng.resource.IResource<T>;
 }
 
 export interface IPageFromResponse {
@@ -62,7 +61,7 @@ export class CodenvyUser {
   private userPagesMap: Map<number, any>;
   private pageInfo: { count?: number; currentPageNumber?: number; countOfPages?: number };
   private logoutAPI: ng.resource.IResourceClass<any>;
-  private remoteUserAPI: IremoteUserAPI<any>;
+  private remoteUserAPI: IRemoteUserAPI<any>;
   private user: any;
 
   /**
@@ -77,11 +76,10 @@ export class CodenvyUser {
     this.codenvyPermissions = codenvyPermissions;
 
     // remote call
-    this.remoteUserAPI = <IremoteUserAPI<any>>this.$resource('/api/user', {}, {
+    this.remoteUserAPI = <IRemoteUserAPI<any>>this.$resource('/api/user', {}, {
       findByID: {method: 'GET', url: '/api/user/:userId'},
       findByAlias: {method: 'GET', url: '/api/user/find?email=:alias'},
       findByName: {method: 'GET', url: '/api/user/find?name=:name'},
-      inRole: {method: 'GET', url: '/api/user/inrole?role=:role&scope=:scope&scopeId=:scopeId'},
       setPassword: {
         method: 'POST', url: '/api/user/password', isArray: false,
         headers: {
@@ -404,16 +402,20 @@ export class CodenvyUser {
 
   /**
    * Fetch the user.
-   * @returns {ng.IPromise<any>}
+   * @returns {ng.IPromise<codenvy.IUser>}
    */
-  fetchUser(): ng.IPromise<any> {
+  fetchUser(): ng.IPromise<codenvy.IUser> {
     let promise = this.remoteUserAPI.get().$promise;
     // check if if was OK or not
-    promise.then((user: any) => {
+    return promise.then((user: codenvy.IUser) => {
       this.user = user;
+      return user;
+    }, (error: any) => {
+      if (error && error.status === 304) {
+        return this.user;
+      }
+      this.$q.reject(error);
     });
-
-    return promise;
   }
 
   /**
