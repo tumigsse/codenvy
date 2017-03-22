@@ -21,10 +21,10 @@
  * @element
  *
  * @description
- * `<list-team-members team="ctrl.team"></list-team-members>` for displaying list of members
+ * `<list-team-members editable="ctrl.editable"></list-team-members>` for displaying list of members
  *
  * @usage
- *   <list-team-members team="ctrl.team"></list-team-members>
+ *   <list-team-members editable="ctrl.editable"></list-team-members>
  *
  * @author Ann Shumilova
  */
@@ -38,11 +38,6 @@ export class ListTeamMembers implements ng.IDirective {
   bindToController: boolean = true;
 
   scope: any = {
-    team: '=',
-    owner: '=',
     editable: '='
   };
-
-  constructor () {
-  }
 }

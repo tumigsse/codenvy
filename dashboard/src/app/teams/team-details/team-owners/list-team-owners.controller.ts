@@ -16,6 +16,7 @@
 import {CodenvyTeam} from '../../../../components/api/codenvy-team.factory';
 import {CodenvyPermissions} from '../../../../components/api/codenvy-permissions.factory';
 import {CodenvyUser} from '../../../../components/api/codenvy-user.factory';
+import {TeamDetailsService} from '../team-details.service';
 
 /**
  * @ngdoc controller
@@ -65,7 +66,7 @@ export class ListTeamOwnersController {
    * Default constructor that is using resource
    * @ngInject for Dependency injection
    */
-  constructor(codenvyTeam: CodenvyTeam, codenvyUser: CodenvyUser, codenvyPermissions: CodenvyPermissions, cheProfile: any, cheNotification: any, lodash: any) {
+  constructor(codenvyTeam: CodenvyTeam, codenvyUser: CodenvyUser, codenvyPermissions: CodenvyPermissions, cheProfile: any, cheNotification: any, lodash: any, teamDetailsService: TeamDetailsService) {
     this.codenvyTeam = codenvyTeam;
     this.codenvyUser = codenvyUser;
     this.codenvyPermissions = codenvyPermissions;
@@ -74,6 +75,7 @@ export class ListTeamOwnersController {
     this.lodash = lodash;
 
     this.isLoading = true;
+    this.owner = teamDetailsService.getOwner();
     this.processOwner();
   }
 
@@ -81,6 +83,9 @@ export class ListTeamOwnersController {
    * Process owner.
    */
   processOwner(): void {
+    if (!this.owner) {
+      return;
+    }
     let profile = this.cheProfile.getProfileFromId(this.owner.id);
     if (profile) {
       this.formUserItem(profile);

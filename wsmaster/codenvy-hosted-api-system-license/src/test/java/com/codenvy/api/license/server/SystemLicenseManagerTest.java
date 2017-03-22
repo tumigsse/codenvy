@@ -21,13 +21,12 @@ import com.codenvy.api.license.exception.SystemLicenseNotFoundException;
 import com.codenvy.api.license.server.dao.SystemLicenseActionDao;
 import com.codenvy.api.license.server.model.impl.SystemLicenseActionImpl;
 import com.codenvy.api.license.shared.dto.IssueDto;
+import com.codenvy.api.license.shared.model.Constants;
 import com.codenvy.api.license.shared.model.Issue;
 import com.codenvy.api.permission.server.SystemDomain;
-import com.codenvy.swarm.client.SwarmDockerConnector;
-import com.codenvy.swarm.client.model.DockerNode;
 import com.google.common.collect.ImmutableList;
+
 import org.eclipse.che.api.core.ApiException;
-import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.user.server.UserManager;
@@ -44,21 +43,15 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.Collections;
-import java.util.List;
 
-import static com.codenvy.api.license.SystemLicense.MAX_NUMBER_OF_FREE_SERVERS;
 import static com.codenvy.api.license.SystemLicense.MAX_NUMBER_OF_FREE_USERS;
 import static com.codenvy.api.license.shared.model.Constants.Action.ACCEPTED;
-import static com.codenvy.api.license.shared.model.Constants.Action.EXPIRED;
 import static com.codenvy.api.license.shared.model.Constants.PaidLicense.FAIR_SOURCE_LICENSE;
-import static com.codenvy.api.license.shared.model.Constants.PaidLicense.PRODUCT_LICENSE;
 import static org.eclipse.che.dto.server.DtoFactory.newDto;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -89,11 +82,7 @@ public class SystemLicenseManagerTest {
     @Mock
     private SystemLicenseFactory                    licenseFactory;
     @Mock
-    private SwarmDockerConnector                    swarmDockerConnector;
-    @Mock
     private UserManager                             userManager;
-    @Mock
-    private List<DockerNode>                        dockerNodes;
     @Mock
     private SystemLicenseActionDao                  systemLicenseActionDao;
     @Mock
@@ -123,11 +112,8 @@ public class SystemLicenseManagerTest {
         when(userManager.getTotalCount()).thenReturn(USER_NUMBER);
         when(systemLicenseAction.getLicenseId()).thenReturn(LICENSE_ID);
 
-        setSizeOfAdditionalNodes(NODES_NUMBER);
-
         licenseManager = spy(new SystemLicenseManager(licenseFactory,
                                                       userManager,
-                                                      swarmDockerConnector,
                                                       systemLicenseActionDao,
                                                       systemLicenseStorage,
                                                       systemLicenseActivator));
@@ -193,7 +179,7 @@ public class SystemLicenseManagerTest {
 
     @Test
     public void testIsSystemLicenseUsageLegal() throws IOException, ServerException {
-        doReturn(true).when(license).isLicenseUsageLegal(USER_NUMBER, NODES_NUMBER);
+        doReturn(true).when(license).isLicenseUsageLegal(USER_NUMBER);
 
         assertTrue(licenseManager.isSystemUsageLegal());
     }
@@ -201,7 +187,6 @@ public class SystemLicenseManagerTest {
     @Test
     public void testIsSystemFreeUsageLegal() throws IOException, ServerException {
         when(userManager.getTotalCount()).thenReturn(MAX_NUMBER_OF_FREE_USERS);
-        setSizeOfAdditionalNodes(MAX_NUMBER_OF_FREE_SERVERS);
 
         doThrow(SystemLicenseNotFoundException.class).when(licenseManager).load();
 
@@ -210,7 +195,7 @@ public class SystemLicenseManagerTest {
 
     @Test
     public void testIsSystemLicenseUsageNotLegal() throws IOException, ServerException {
-        doReturn(false).when(license).isLicenseUsageLegal(USER_NUMBER, NODES_NUMBER);
+        doReturn(false).when(license).isLicenseUsageLegal(USER_NUMBER);
 
         assertFalse(licenseManager.isSystemUsageLegal());
     }
@@ -218,7 +203,6 @@ public class SystemLicenseManagerTest {
     @Test
     public void testIsCodenvyFreeUsageNotLegal() throws IOException, ServerException {
         when(userManager.getTotalCount()).thenReturn(MAX_NUMBER_OF_FREE_USERS + 1);
-        setSizeOfAdditionalNodes(MAX_NUMBER_OF_FREE_SERVERS + 1);
 
         doThrow(SystemLicenseNotFoundException.class).when(licenseManager).load();
 
@@ -226,57 +210,9 @@ public class SystemLicenseManagerTest {
     }
 
     @Test
-    public void testIsCodenvyActualNodesUsageLegal() throws IOException, ServerException {
-        doReturn(true).when(license).isLicenseNodesUsageLegal(NODES_NUMBER);
-
-        assertTrue(licenseManager.isSystemNodesUsageLegal(null));
-    }
-
-    @Test
-    public void testIsCodenvyGivenNodesUsageLegal() throws IOException, ServerException {
-        doReturn(true).when(license).isLicenseNodesUsageLegal(NODES_NUMBER);
-
-        assertTrue(licenseManager.isSystemNodesUsageLegal(NODES_NUMBER));
-        verify(swarmDockerConnector, never()).getAvailableNodes();
-    }
-
-    @Test
-    public void testIsCodenvyActualNodesUsageNotLegal() throws IOException, ServerException {
-        doReturn(false).when(license).isLicenseNodesUsageLegal(NODES_NUMBER);
-
-        assertFalse(licenseManager.isSystemNodesUsageLegal(null));
-    }
-
-    @Test
-    public void testIsCodenvyGivenNodesUsageNotLegal() throws IOException, ServerException {
-        doReturn(false).when(license).isLicenseNodesUsageLegal(NODES_NUMBER);
-
-        assertFalse(licenseManager.isSystemNodesUsageLegal(NODES_NUMBER));
-        verify(swarmDockerConnector, never()).getAvailableNodes();
-    }
-
-    @Test
-    public void testIsCodenvyNodesFreeUsageLegal() throws IOException, ServerException {
-        setSizeOfAdditionalNodes(MAX_NUMBER_OF_FREE_SERVERS);
-
-        doThrow(SystemLicenseNotFoundException.class).when(licenseManager).load();
-
-        assertTrue(licenseManager.isSystemNodesUsageLegal(null));
-    }
-
-    @Test
-    public void testIsCodenvyNodesFreeUsageNotLegal() throws IOException, ServerException {
-        setSizeOfAdditionalNodes(MAX_NUMBER_OF_FREE_SERVERS + 1);
-
-        doThrow(SystemLicenseNotFoundException.class).when(licenseManager).load();
-
-        assertFalse(licenseManager.isSystemNodesUsageLegal(null));
-    }
-
-    @Test
     public void shouldConfirmThatUserCanBeAddedDueToLicense() throws ServerException {
         when(userManager.getTotalCount()).thenReturn(USER_NUMBER);
-        doReturn(true).when(license).isLicenseUsageLegal(USER_NUMBER + 1, 0);
+        doReturn(true).when(license).isLicenseUsageLegal(USER_NUMBER + 1);
 
         assertTrue(licenseManager.canUserBeAdded());
     }
@@ -292,7 +228,7 @@ public class SystemLicenseManagerTest {
     @Test
     public void shouldDisproveThatUserCanBeAddedDueToLicense() throws ServerException {
         when(userManager.getTotalCount()).thenReturn(USER_NUMBER);
-        doReturn(false).when(license).isLicenseUsageLegal(USER_NUMBER + 1, 0);
+        doReturn(false).when(license).isLicenseUsageLegal(USER_NUMBER + 1);
 
         assertFalse(licenseManager.canUserBeAdded());
     }
@@ -334,9 +270,9 @@ public class SystemLicenseManagerTest {
         doReturn("License expiring").when(licenseManager).getMessageForLicenseExpiring();
         assertEquals(licenseManager.getLicenseIssues(),
                      ImmutableList.of(newDto(IssueDto.class).withStatus(Issue.Status.USER_LICENSE_HAS_REACHED_ITS_LIMIT)
-                                                            .withMessage(SystemLicenseManager.LICENSE_HAS_REACHED_ITS_USER_LIMIT_MESSAGE_FOR_REGISTRATION),
+                                                            .withMessage(Constants.LICENSE_HAS_REACHED_ITS_USER_LIMIT_MESSAGE_FOR_REGISTRATION),
                                       newDto(IssueDto.class).withStatus(Issue.Status.FAIR_SOURCE_LICENSE_IS_NOT_ACCEPTED)
-                                                            .withMessage(SystemLicenseManager.FAIR_SOURCE_LICENSE_IS_NOT_ACCEPTED_MESSAGE),
+                                                            .withMessage(Constants.FAIR_SOURCE_LICENSE_IS_NOT_ACCEPTED_MESSAGE),
                                       newDto(IssueDto.class).withStatus(Issue.Status.LICENSE_EXPIRING)
                                                             .withMessage("License expiring")));
     }
@@ -351,9 +287,9 @@ public class SystemLicenseManagerTest {
         doReturn("License expired").when(licenseManager).getMessageForLicenseCompletelyExpired();
         assertEquals(licenseManager.getLicenseIssues(),
                      ImmutableList.of(newDto(IssueDto.class).withStatus(Issue.Status.USER_LICENSE_HAS_REACHED_ITS_LIMIT)
-                                                            .withMessage(SystemLicenseManager.LICENSE_HAS_REACHED_ITS_USER_LIMIT_MESSAGE_FOR_REGISTRATION),
+                                                            .withMessage(Constants.LICENSE_HAS_REACHED_ITS_USER_LIMIT_MESSAGE_FOR_REGISTRATION),
                                       newDto(IssueDto.class).withStatus(Issue.Status.FAIR_SOURCE_LICENSE_IS_NOT_ACCEPTED)
-                                                            .withMessage(SystemLicenseManager.FAIR_SOURCE_LICENSE_IS_NOT_ACCEPTED_MESSAGE),
+                                                            .withMessage(Constants.FAIR_SOURCE_LICENSE_IS_NOT_ACCEPTED_MESSAGE),
                                       newDto(IssueDto.class).withStatus(Issue.Status.LICENSE_EXPIRED)
                                                             .withMessage("License expired")));
     }
@@ -501,11 +437,6 @@ public class SystemLicenseManagerTest {
 
         // then
         assertEquals(result, "The Codenvy license has reached its user limit - you can access the user dashboard but not the IDE.");
-    }
-
-    private void setSizeOfAdditionalNodes(int size) throws IOException {
-        when(swarmDockerConnector.getAvailableNodes()).thenReturn(dockerNodes);
-        when(dockerNodes.size()).thenReturn(size);
     }
 
 }

@@ -51,6 +51,7 @@ export class BillingConfig {
     // config routes
     register.app.config(($routeProvider: ng.route.IRouteProvider) => {
       $routeProvider.accessWhen('/billing', {
+        reloadOnSearch: false,
         title: 'Billing',
         templateUrl: 'app/billing/billing.html',
         controller: 'BillingController',
