@@ -36,25 +36,11 @@ public class GitlabURLParser implements URLParser<GitlabUrl> {
             "^(?:http)(?:s)?(?:\\:\\/\\/)gitlab.com/(?<repoUser>[^/]++)/(?<repoName>[^/]++)(?:/tree/(?<branchName>[^/]++)(?:/(?<subFolder>.*))?)?$");
 
 
-    /**
-     * Check if the provided URL is a valid Github url or not
-     *
-     * @param url
-     *         a not null string representation of URL
-     * @return true if the given URL is a github URL
-     */
     @Override
     public boolean isValid(@NotNull String url) {
         return GITLAB_PATTERN.matcher(url).matches();
     }
 
-    /**
-     * Provides a github URL object allowing to extract some part of the URL.
-     *
-     * @param url
-     *         URL to transform into a managed object
-     * @return managed github url {@link GitlabUrl}.
-     */
     @Override
     public GitlabUrl parse(String url) {
         // Apply github url to the regexp

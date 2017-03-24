@@ -179,7 +179,8 @@ public class GitlabUrl {
                                     .add(repository)
                                     .add("raw")
                                     .add(branch)
-                                    .add(dockerfileFilename).toString();
+                                    .add(dockerfileFilename)
+                                    .toString();
     }
 
     /**
@@ -193,8 +194,8 @@ public class GitlabUrl {
                                     .add(repository)
                                     .add("raw")
                                     .add(branch)
-                                    .add(factoryFilename).toString();
-
+                                    .add(factoryFilename)
+                                    .toString();
     }
 
     /**
