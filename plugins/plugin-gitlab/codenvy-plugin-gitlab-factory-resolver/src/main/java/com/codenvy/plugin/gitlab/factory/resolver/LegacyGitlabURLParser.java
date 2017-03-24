@@ -19,7 +19,7 @@ import org.eclipse.che.plugin.urlfactory.URLChecker;
 import javax.inject.Inject;
 
 /**
- * Support old dockerfila and factory filenames;
+ * Support for old dockerfile and factory file names;
  *
  * @author Max Shaposhnik
  */
