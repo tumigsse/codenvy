@@ -203,7 +203,7 @@ public class GitlabUrl {
      * @return location of the repository.
      */
     protected String repositoryLocation() {
-        return GITLAB_PREFIX + this.username + "/" + this.repository + ".git";
+        return GITLAB_PREFIX + "/" + this.username + "/" + this.repository + ".git";
     }
 
 
