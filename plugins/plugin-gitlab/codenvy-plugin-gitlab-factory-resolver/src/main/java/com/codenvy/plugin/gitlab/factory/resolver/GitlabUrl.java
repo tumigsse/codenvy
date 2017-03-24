@@ -16,6 +16,8 @@ package com.codenvy.plugin.gitlab.factory.resolver;
 
 import com.google.common.base.Strings;
 
+import java.util.StringJoiner;
+
 /**
  * Representation of a github URL, allowing to get details from it.
  * <p> like
@@ -29,7 +31,7 @@ public class GitlabUrl {
     /**
      * Gitlab prefix.
      */
-    private static final String GITLAB_PREFIX = "https://gitlab.com/";
+    private static final String GITLAB_PREFIX = "https://gitlab.com";
 
     /**
      * Master branch is the default.
@@ -172,7 +174,12 @@ public class GitlabUrl {
      * @return location of dockerfile in a repository
      */
     protected String dockerFileLocation() {
-        return GITLAB_PREFIX + this.username + "/" + this.repository + "/raw/" + this.getBranch() + "/" + dockerfileFilename;
+        return new StringJoiner("/").add(GITLAB_PREFIX)
+                                    .add(username)
+                                    .add(repository)
+                                    .add("raw")
+                                    .add(branch)
+                                    .add(dockerfileFilename).toString();
     }
 
     /**
@@ -181,7 +188,13 @@ public class GitlabUrl {
      * @return location of codenvy factory json file in a repository
      */
     protected String factoryJsonFileLocation() {
-        return GITLAB_PREFIX + this.username + "/" + this.repository + "/raw/" + this.getBranch() + "/" + factoryFilename;
+        return new StringJoiner("/").add(GITLAB_PREFIX)
+                                    .add(username)
+                                    .add(repository)
+                                    .add("raw")
+                                    .add(branch)
+                                    .add(factoryFilename).toString();
+
     }
 
     /**
