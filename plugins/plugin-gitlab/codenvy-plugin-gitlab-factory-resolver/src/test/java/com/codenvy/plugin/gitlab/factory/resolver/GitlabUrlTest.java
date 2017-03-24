@@ -57,7 +57,7 @@ public class GitlabUrlTest {
      */
     @Test
     public void checkDockerfileLocation() {
-        assertEquals(gitlabUrl.dockerFileLocation(), "https://gitlab.com/eclipse/che/raw/master/.runtime.dockerfile");
+        assertEquals(gitlabUrl.dockerFileLocation(), "https://gitlab.com/eclipse/che/raw/master/.factory.dockerfile");
     }
 
     /**

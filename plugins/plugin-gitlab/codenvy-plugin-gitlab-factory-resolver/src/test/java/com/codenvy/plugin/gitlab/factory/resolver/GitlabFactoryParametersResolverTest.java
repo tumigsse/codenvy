@@ -150,7 +150,7 @@ public class GitlabFactoryParametersResolverTest {
 
 
         // check we provide dockerfile and correct env
-        verify(urlFactoryBuilder).buildWorkspaceConfig(eq("che"), eq("eclipse"), eq("https://gitlab.com/eclipse/che/raw/master/.runtime.dockerfile"));
+        verify(urlFactoryBuilder).buildWorkspaceConfig(eq("che"), eq("eclipse"), eq("https://gitlab.com/eclipse/che/raw/master/.factory.dockerfile"));
 
         // check project config built
         verify(projectConfigDtoMerger).merge(any(FactoryDto.class), projectConfigDtoArgumentCaptor.capture());
@@ -188,7 +188,7 @@ public class GitlabFactoryParametersResolverTest {
         assertEquals(createFactoryParamsArgumentCaptor.getValue(), "https://gitlab.com/eclipse/che/raw/4.2.x/.factory.json");
 
         // check we provide dockerfile and correct env
-        verify(urlFactoryBuilder).buildWorkspaceConfig(eq("che"), eq("eclipse"), eq("https://gitlab.com/eclipse/che/raw/4.2.x/.runtime.dockerfile"));
+        verify(urlFactoryBuilder).buildWorkspaceConfig(eq("che"), eq("eclipse"), eq("https://gitlab.com/eclipse/che/raw/4.2.x/.factory.dockerfile"));
 
         // check project config built
         verify(projectConfigDtoMerger).merge(any(FactoryDto.class), projectConfigDtoArgumentCaptor.capture());
@@ -227,7 +227,7 @@ public class GitlabFactoryParametersResolverTest {
         assertEquals(createFactoryParamsArgumentCaptor.getValue(), "https://gitlab.com/eclipse/che/raw/4.2.x/.factory.json");
 
         // check we provide dockerfile and correct env
-        verify(urlFactoryBuilder).buildWorkspaceConfig(eq("che"), eq("eclipse"), eq("https://gitlab.com/eclipse/che/raw/4.2.x/.runtime.dockerfile"));
+        verify(urlFactoryBuilder).buildWorkspaceConfig(eq("che"), eq("eclipse"), eq("https://gitlab.com/eclipse/che/raw/4.2.x/.factory.dockerfile"));
 
         // check project config built
         verify(projectConfigDtoMerger).merge(any(FactoryDto.class), projectConfigDtoArgumentCaptor.capture());
