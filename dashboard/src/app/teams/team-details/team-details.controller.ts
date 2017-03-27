@@ -112,12 +112,12 @@ export class TeamDetailsController {
    */
   constructor(codenvyTeam: CodenvyTeam, codenvyResourcesDistribution: CodenvyResourcesDistribution, codenvyPermissions: CodenvyPermissions,
               codenvyUser: CodenvyUser, $route: ng.route.IRouteService, $location: ng.ILocationService, $rootScope: che.IRootScopeService,
-              $scope: ng.IScope, confirmDialogService: any, codenvyOrganizationEventsManager: CodenvyTeamEventsManager, cheNotification: any,
+              $scope: ng.IScope, confirmDialogService: any, codenvyTeamEventsManager: CodenvyTeamEventsManager, cheNotification: any,
               lodash: any, teamDetailsService: TeamDetailsService) {
     this.codenvyTeam = codenvyTeam;
     this.codenvyResourcesDistribution = codenvyResourcesDistribution;
     this.codenvyPermissions = codenvyPermissions;
-    this.codenvyTeamEventsManager = codenvyOrganizationEventsManager;
+    this.codenvyTeamEventsManager = codenvyTeamEventsManager;
     this.codenvyUser = codenvyUser;
     this.teamName = $route.current.params.teamName;
     this.$location = $location;
