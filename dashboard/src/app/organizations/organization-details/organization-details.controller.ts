@@ -167,6 +167,7 @@ export class OrganizationDetailsController {
    * Update data.
    */
   updateData(): void {
+    this.organizationName = this.$route.current.params.organizationName;
     if (!this.organization) {
       return;
     }
