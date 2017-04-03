@@ -1,5 +1,5 @@
 /*
- *  [2015] - [2017] Codenvy, S.A.
+ *  [2012] - [2017] Codenvy, S.A.
  *  All Rights Reserved.
  *
  * NOTICE:  All information contained herein is, and remains
@@ -12,30 +12,19 @@
  * is strictly forbidden unless prior written permission is obtained
  * from Codenvy S.A..
  */
-'use strict';
+package com.codenvy.plugin.gitlab.factory.resolver;
 
+import com.google.inject.AbstractModule;
 
-import {CodenvyTeamBuilder} from './codenvy-team-builder';
+import org.eclipse.che.inject.DynaModule;
 
 /**
- * This class is providing the entry point for accessing the builders
- * @author Florent Benoit
- * @author Oleksii Orel
+ * @author Max Shaposhnik (mshaposhnik@codenvy.com)
  */
-export class CodenvyAPIBuilder {
-
-  /**
-   * Default constructor
-   * @ngInject for Dependency injection
-   */
-  constructor () {
-  }
-
-  /***
-   * The Codenvy Team builder
-   * @returns {CodenvyTeamBuilder}
-   */
-  getTeamBuilder() {
-    return new CodenvyTeamBuilder();
-  }
+@DynaModule
+public class GitLabFactoryModule extends AbstractModule {
+    @Override
+    protected void configure() {
+        bind(GitlabURLParser.class).to(LegacyGitlabURLParser.class);
+    }
 }
