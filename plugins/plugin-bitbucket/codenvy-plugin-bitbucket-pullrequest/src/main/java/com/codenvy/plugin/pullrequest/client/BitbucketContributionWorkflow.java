@@ -14,24 +14,25 @@
  */
 package com.codenvy.plugin.pullrequest.client;
 
-import com.codenvy.plugin.pullrequest.client.steps.AddHttpForkRemoteStep;
-import com.codenvy.plugin.pullrequest.client.steps.AddReviewFactoryLinkStep;
-import com.codenvy.plugin.pullrequest.client.steps.AuthorizeCodenvyOnVCSHostStep;
-import com.codenvy.plugin.pullrequest.client.steps.CommitWorkingTreeStep;
-import com.codenvy.plugin.pullrequest.client.steps.CreateForkStep;
-import com.codenvy.plugin.pullrequest.client.steps.DefineExecutionConfiguration;
-import com.codenvy.plugin.pullrequest.client.steps.DefineWorkBranchStep;
-import com.codenvy.plugin.pullrequest.client.steps.DetectPullRequestStep;
-import com.codenvy.plugin.pullrequest.client.steps.DetermineUpstreamRepositoryStep;
-import com.codenvy.plugin.pullrequest.client.steps.GenerateReviewFactoryStep;
-import com.codenvy.plugin.pullrequest.client.steps.InitializeWorkflowContextStep;
-import com.codenvy.plugin.pullrequest.client.steps.IssuePullRequestStep;
-import com.codenvy.plugin.pullrequest.client.steps.PushBranchOnForkStep;
-import com.codenvy.plugin.pullrequest.client.steps.PushBranchOnOriginStep;
-import com.codenvy.plugin.pullrequest.client.steps.UpdatePullRequestStep;
-import com.codenvy.plugin.pullrequest.client.workflow.Context;
-import com.codenvy.plugin.pullrequest.client.workflow.ContributionWorkflow;
-import com.codenvy.plugin.pullrequest.client.workflow.StepsChain;
+import org.eclipse.che.plugin.pullrequest.client.steps.AddHttpForkRemoteStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.AddReviewFactoryLinkStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.AddSshForkRemoteStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.AuthorizeCodenvyOnVCSHostStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.CommitWorkingTreeStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.CreateForkStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.DefineExecutionConfiguration;
+import org.eclipse.che.plugin.pullrequest.client.steps.DefineWorkBranchStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.DetectPullRequestStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.DetermineUpstreamRepositoryStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.GenerateReviewFactoryStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.InitializeWorkflowContextStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.IssuePullRequestStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.PushBranchOnForkStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.PushBranchOnOriginStep;
+import org.eclipse.che.plugin.pullrequest.client.steps.UpdatePullRequestStep;
+import org.eclipse.che.plugin.pullrequest.client.workflow.Context;
+import org.eclipse.che.plugin.pullrequest.client.workflow.ContributionWorkflow;
+import org.eclipse.che.plugin.pullrequest.client.workflow.StepsChain;
 import com.google.common.base.Supplier;
 
 import javax.inject.Inject;
@@ -43,6 +44,8 @@ import javax.inject.Inject;
  */
 public class BitbucketContributionWorkflow implements ContributionWorkflow {
 
+    private static final String BITBUCKET_HOSTED_ENDPOINT = "https://bitbucket.org";
+
     private final InitializeWorkflowContextStep   initializeWorkflowContextStep;
     private final DefineWorkBranchStep            defineWorkBranchStep;
     private final CommitWorkingTreeStep           commitWorkingTreeStep;
@@ -51,6 +54,7 @@ public class BitbucketContributionWorkflow implements ContributionWorkflow {
     private final DetermineUpstreamRepositoryStep determineUpstreamRepositoryStep;
     private final CreateForkStep                  createForkStep;
     private final AddHttpForkRemoteStep           addHttpForkRemoteStep;
+    private final AddSshForkRemoteStep            addSshForkRemoteStep;
     private final PushBranchOnForkStep            pushBranchOnForkStep;
     private final PushBranchOnOriginStep          pushBranchOnOriginStep;
     private final GenerateReviewFactoryStep       generateReviewFactoryStep;
@@ -70,6 +74,7 @@ public class BitbucketContributionWorkflow implements ContributionWorkflow {
                                          DetectPullRequestStep detectPullRequestStep,
                                          CreateForkStep createForkStep,
                                          AddHttpForkRemoteStep addHttpForkRemoteStep,
+                                         AddSshForkRemoteStep addSshForkRemoteStep,
                                          PushBranchOnForkStep pushBranchOnForkStep,
                                          PushBranchOnOriginStep pushBranchOnOriginStep,
                                          GenerateReviewFactoryStep generateReviewFactoryStep,
@@ -85,6 +90,7 @@ public class BitbucketContributionWorkflow implements ContributionWorkflow {
         this.detectPullRequestStep = detectPullRequestStep;
         this.createForkStep = createForkStep;
         this.addHttpForkRemoteStep = addHttpForkRemoteStep;
+        this.addSshForkRemoteStep = addSshForkRemoteStep;
         this.pushBranchOnForkStep = pushBranchOnForkStep;
         this.pushBranchOnOriginStep = pushBranchOnOriginStep;
         this.generateReviewFactoryStep = generateReviewFactoryStep;
@@ -114,7 +120,8 @@ public class BitbucketContributionWorkflow implements ContributionWorkflow {
                                           }
                                       },
                                       StepsChain.first(createForkStep)
-                                                .then(addHttpForkRemoteStep)
+                                                .then(BITBUCKET_HOSTED_ENDPOINT.equals(context.getVcsHostingService().getHost())
+                                                      ? addHttpForkRemoteStep : addSshForkRemoteStep)
                                                 .then(pushBranchOnForkStep),
                                       StepsChain.first(pushBranchOnOriginStep))
                          .then(generateReviewFactoryStep)
@@ -138,7 +145,8 @@ public class BitbucketContributionWorkflow implements ContributionWorkflow {
                                               return context.isForkAvailable();
                                           }
                                       },
-                                      StepsChain.first(addHttpForkRemoteStep)
+                                      StepsChain.first(BITBUCKET_HOSTED_ENDPOINT.equals(context.getVcsHostingService().getHost())
+                                                       ? addHttpForkRemoteStep : addSshForkRemoteStep)
                                                 .then(pushBranchOnForkStep),
                                       StepsChain.first(pushBranchOnOriginStep))
                          .then(updatePullRequestStep);

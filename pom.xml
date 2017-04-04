@@ -513,11 +513,6 @@
             </dependency>
             <dependency>
                 <groupId>com.codenvy.plugin</groupId>
-                <artifactId>codenvy-hosted-ext-factory</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.codenvy.plugin</groupId>
                 <artifactId>codenvy-hosted-ext-hosted</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -548,7 +543,17 @@
             </dependency>
             <dependency>
                 <groupId>com.codenvy.plugin</groupId>
-                <artifactId>codenvy-plugin-bitbucket-ext-bitbucket</artifactId>
+                <artifactId>codenvy-plugin-bitbucket-ext-bitbucket-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.codenvy.plugin</groupId>
+                <artifactId>codenvy-plugin-bitbucket-ext-bitbucket-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.codenvy.plugin</groupId>
+                <artifactId>codenvy-plugin-bitbucket-ext-bitbucket-shared</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -669,11 +674,6 @@
             <dependency>
                 <groupId>com.codenvy.plugin</groupId>
                 <artifactId>codenvy-plugin-redhat-oauth2</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.codenvy.plugin</groupId>
-                <artifactId>codenvy-plugin-url-factory</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -852,6 +852,11 @@
             <dependency>
                 <groupId>org.eclipse.che.plugin</groupId>
                 <artifactId>che-plugin-docker-compose</artifactId>
+                <version>${che.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.che.plugin</groupId>
+                <artifactId>che-plugin-url-factory</artifactId>
                 <version>${che.version}</version>
             </dependency>
             <dependency>
