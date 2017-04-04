@@ -27,7 +27,7 @@ import javax.websocket.server.ServerEndpoint;
  * Implementation of {@link BasicWebSocketEndpoint} for Che packaging.
  * Add only mapping "/websocket/{endpoint-id}".
  */
-@ServerEndpoint(value = "/api/websocket/{endpoint-id}", configurator = GuiceInjectorEndpointConfigurator.class)
+@ServerEndpoint(value = "/websocket/{endpoint-id}", configurator = GuiceInjectorEndpointConfigurator.class)
 public class CodenvyWebSocketEndpoint extends BasicWebSocketEndpoint {
     @Inject
     public CodenvyWebSocketEndpoint(WebSocketSessionRegistry registry,
