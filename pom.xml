@@ -33,7 +33,7 @@
         <module>plugins</module>
         <module>dashboard</module>
         <module>site</module>
-        <module>ide/codenvy-hosted-basic-ide</module>
+        <module>ide/codenvy-ide-core</module>
         <module>assembly</module>
         <module>dockerfiles/agents</module>
     </modules>
@@ -208,7 +208,7 @@
             </dependency>
             <dependency>
                 <groupId>com.codenvy.onpremises</groupId>
-                <artifactId>codenvy-hosted-basic-ide</artifactId>
+                <artifactId>codenvy-ide-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -232,7 +232,7 @@
             </dependency>
             <dependency>
                 <groupId>com.codenvy.onpremises.wsagent</groupId>
-                <artifactId>codenvy-hosted-basic-server</artifactId>
+                <artifactId>codenvy-wsagent-core</artifactId>
                 <version>${project.version}</version>
                 <type>war</type>
             </dependency>
