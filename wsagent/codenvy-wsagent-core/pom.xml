@@ -15,8 +15,7 @@
     from Codenvy S.A..
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <artifactId>codenvy-agent-parent</artifactId>
@@ -65,11 +64,6 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
-            <artifactId>che-wsagent-core</artifactId>
-            <type>war</type>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.che.core</groupId>
             <artifactId>che-core-api-core</artifactId>
         </dependency>
         <dependency>
@@ -87,6 +81,11 @@
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
             <artifactId>che-core-commons-schedule</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.che.core</groupId>
+            <artifactId>che-wsagent-core</artifactId>
+            <type>war</type>
         </dependency>
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
@@ -137,8 +136,7 @@
                 <configuration>
                     <packagingExcludes>WEB-INF/lib/*gwt*.jar,
                         WEB-INF/lib/gin-*.jar,
-                        WEB-INF/lib/jsr305*.jar
-                    </packagingExcludes>
+                        WEB-INF/lib/jsr305*.jar</packagingExcludes>
                     <overlays>
                         <overlay>
                             <groupId>org.eclipse.che.core</groupId>

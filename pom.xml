@@ -232,12 +232,6 @@
             </dependency>
             <dependency>
                 <groupId>com.codenvy.onpremises.wsagent</groupId>
-                <artifactId>codenvy-wsagent-core</artifactId>
-                <version>${project.version}</version>
-                <type>war</type>
-            </dependency>
-            <dependency>
-                <groupId>com.codenvy.onpremises.wsagent</groupId>
                 <artifactId>codenvy-hosted-machine-authentication-agent</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -245,6 +239,12 @@
                 <groupId>com.codenvy.onpremises.wsagent</groupId>
                 <artifactId>codenvy-hosted-workspace-activity-agent</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.codenvy.onpremises.wsagent</groupId>
+                <artifactId>codenvy-wsagent-core</artifactId>
+                <version>${project.version}</version>
+                <type>war</type>
             </dependency>
             <dependency>
                 <groupId>com.codenvy.onpremises.wsagent</groupId>
