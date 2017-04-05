@@ -67,7 +67,7 @@
             <classifier>classes</classifier>
             <exclusions>
                 <exclusion>
-                    <artifactId>che-agent-basic-server</artifactId>
+                    <artifactId>che-wsagent-core</artifactId>
                     <groupId>org.eclipse.che.core</groupId>
                 </exclusion>
                 <exclusion>

@@ -65,7 +65,7 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
-            <artifactId>che-agent-basic-server</artifactId>
+            <artifactId>che-wsagent-core</artifactId>
             <type>war</type>
         </dependency>
         <dependency>
@@ -125,7 +125,7 @@
                         <id>analyze</id>
                         <configuration>
                             <ignoredDependencies>
-                                <ignoredDependency>org.eclipse.che.core:che-agent-basic-server</ignoredDependency>
+                                <ignoredDependency>org.eclipse.che.core:che-wsagent-core</ignoredDependency>
                             </ignoredDependencies>
                         </configuration>
                     </execution>
@@ -142,7 +142,7 @@
                     <overlays>
                         <overlay>
                             <groupId>org.eclipse.che.core</groupId>
-                            <artifactId>che-agent-basic-server</artifactId>
+                            <artifactId>che-wsagent-core</artifactId>
                             <type>war</type>
                             <excludes>
                                 <exclude>WEB-INF/classes/org/eclipse/che/wsagent/server/CheWsAgentModule*</exclude>
